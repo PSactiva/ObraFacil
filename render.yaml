@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: obrafacil
+    runtime: python
+    buildCommand: pip install -r requirements.txt && cd backend && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: cd backend && gunicorn config.wsgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DJANGO_ENV
+        value: production

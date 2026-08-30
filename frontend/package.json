@@ -1,0 +1,9 @@
+{
+  "name": "obrafacil-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Testes de interface do frontend ObraFácil",
+  "scripts": {
+    "test": "echo \"Configure Jest ou Playwright para testes de UI\" && exit 0"
+  }
+}

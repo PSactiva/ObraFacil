@@ -1,0 +1,15 @@
+# Responsáveis por área do projeto — atualize com os @username do GitHub de cada integrante.
+# Documentação: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Padrão: qualquer alteração fora de pastas específicas exige revisão dos mantenedores
+*                                   @Activaware2026
+
+# Backend (Django / API)
+/backend/                           @Activaware2026
+
+# Frontend (PWA)
+/frontend/                          @Activaware2026
+
+# Documentação e CI
+/docs/                              @Activaware2026
+/.github/                           @Activaware2026

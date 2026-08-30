@@ -1,0 +1,106 @@
+:root {
+  --color-primary: #1a5276;
+  --color-primary-dark: #154360;
+  --color-bg: #f8f9fa;
+  --color-text: #212529;
+  --color-border: #dee2e6;
+  --touch-target: 48px;
+  --spacing: 1rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+header {
+  background: var(--color-primary);
+  color: #fff;
+  padding: var(--spacing);
+  text-align: center;
+}
+
+header h1 { margin: 0; font-size: 1.5rem; }
+.subtitle { margin: 0.25rem 0 0; opacity: 0.9; font-size: 0.9rem; }
+
+.nav-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.nav-list a {
+  display: block;
+  padding: var(--spacing);
+  min-height: var(--touch-target);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+main { padding: var(--spacing); max-width: 640px; margin: 0 auto; }
+
+section {
+  background: #fff;
+  border-radius: 8px;
+  padding: var(--spacing);
+  margin-bottom: var(--spacing);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.form-group { margin-bottom: var(--spacing); }
+label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+
+input[type="number"] {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+}
+
+input:focus {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+  border-color: var(--color-primary);
+}
+
+.btn-primary {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-primary:hover, .btn-primary:focus { background: var(--color-primary-dark); }
+
+.help-text { font-size: 0.875rem; color: #6c757d; margin-bottom: var(--spacing); }
+
+output[role="status"] {
+  display: block;
+  margin-top: var(--spacing);
+  padding: var(--spacing);
+  background: #e8f4f8;
+  border-radius: 6px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  min-height: 3rem;
+}
+
+footer { text-align: center; padding: var(--spacing); font-size: 0.875rem; color: #6c757d; }

@@ -1,0 +1,48 @@
+name: Bug Report
+description: Reportar um problema no ObraFácil
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Descreva o bug com o máximo de detalhes possível.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área afetada
+      options:
+        - Backend
+        - Frontend
+        - Documentação
+        - CI / Deploy
+        - Outro
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição do bug
+      description: O que aconteceu? O que era esperado?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. Acesse...
+        2. Clique em...
+        3. Observe o erro...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Ambiente
+      placeholder: "SO, navegador, versão do Python, etc."
+    validations:
+      required: false
