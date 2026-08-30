@@ -63,3 +63,4 @@ Após autenticar (`gh auth login`), suba o projeto e aplique as proteções:
 chmod +x scripts/setup-github.sh
 ./scripts/setup-github.sh ObraFacil private
 ```
+# teste
