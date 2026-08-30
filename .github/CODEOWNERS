@@ -2,14 +2,14 @@
 # Documentação: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Padrão: qualquer alteração fora de pastas específicas exige revisão dos mantenedores
-*                                   @Activaware2026
+*                                   @PSactiva
 
 # Backend (Django / API)
-/backend/                           @Activaware2026
+/backend/                           @PSactiva
 
 # Frontend (PWA)
-/frontend/                          @Activaware2026
+/frontend/                          @PSactiva
 
 # Documentação e CI
-/docs/                              @Activaware2026
-/.github/                           @Activaware2026
+/docs/                              @PSactiva
+/.github/                           @PSactiva
