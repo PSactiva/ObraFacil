@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from .models import Orcamento, OrcamentoItem
@@ -54,12 +55,14 @@ class OrcamentoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "criado_em", "atualizado_em", "total"]
 
+    @transaction.atomic
     def create(self, validated_data):
         itens_data = validated_data.pop("itens", [])
         orcamento = Orcamento.objects.create(**validated_data)
         self._create_itens(orcamento, itens_data)
         return orcamento
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         itens_data = validated_data.pop("itens", None)
         instance = super().update(instance, validated_data)
