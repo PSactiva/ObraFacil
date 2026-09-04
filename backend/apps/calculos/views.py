@@ -1,4 +1,5 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from . import services
@@ -11,6 +12,7 @@ from .serializers import (
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def calcular_area_view(request):
     s = AreaInputSerializer(data=request.data)
     s.is_valid(raise_exception=True)
@@ -20,6 +22,7 @@ def calcular_area_view(request):
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def calcular_concreto_view(request):
     s = ConcretoInputSerializer(data=request.data)
     s.is_valid(raise_exception=True)
@@ -29,6 +32,7 @@ def calcular_concreto_view(request):
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def calcular_piso_view(request):
     s = PisoInputSerializer(data=request.data)
     s.is_valid(raise_exception=True)
@@ -37,6 +41,7 @@ def calcular_piso_view(request):
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def estimar_custo_view(request):
     s = CustoInputSerializer(data=request.data)
     s.is_valid(raise_exception=True)
