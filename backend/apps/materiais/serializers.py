@@ -6,4 +6,5 @@ from .models import Material
 class MaterialSerializer(serializers.ModelSerializer):
     class Meta:
         model = Material
-        fields = "__all__"
+        fields = ["id", "nome", "unidade", "preco_unitario", "categoria", "ativo"]
+        read_only_fields = ["id"]

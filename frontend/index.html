@@ -1,60 +1,207 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="ObraFácil — Orçamentos no canteiro de obras">
-  <meta name="theme-color" content="#1a5276">
-  <title>ObraFácil</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/accessibility.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construtora Silva - Gestão de Obras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-  <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
+<body class="bg-gray-100 font-sans antialiased">
 
-  <header role="banner">
-    <h1>ObraFácil</h1>
-    <p class="subtitle">Orçamentos no canteiro de obras</p>
-  </header>
+    <div class="min-h-screen flex flex-col md:flex-row">
 
-  <nav role="navigation" aria-label="Menu principal">
-    <ul class="nav-list">
-      <li><a href="#calculos" aria-current="page">Cálculos</a></li>
-      <li><a href="#orcamentos">Orçamentos</a></li>
-      <li><a href="#materiais">Materiais</a></li>
-    </ul>
-  </nav>
+        <aside class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0">
+            <div class="p-4 flex items-center justify-between md:justify-start space-x-3 border-b border-slate-800">
+                <i class="fa-solid font-bold text-amber-500 text-2xl fa-helmet-safety"></i>
+                <span class="font-bold text-lg tracking-wide">Construtora Silva</span>
+            </div>
 
-  <main id="main-content" role="main">
-    <section id="calculos" aria-labelledby="calculos-title">
-      <h2 id="calculos-title">Calculadora de Área</h2>
-      <form id="form-area" aria-describedby="area-help">
-        <p id="area-help" class="help-text">Informe comprimento e largura em metros.</p>
-        <div class="form-group">
-          <label for="comprimento">Comprimento (m)</label>
-          <input type="number" id="comprimento" min="0" step="0.01" inputmode="decimal" required aria-required="true">
-        </div>
-        <div class="form-group">
-          <label for="largura">Largura (m)</label>
-          <input type="number" id="largura" min="0" step="0.01" inputmode="decimal" required aria-required="true">
-        </div>
-        <button type="submit" class="btn-primary" aria-label="Calcular área">Calcular área</button>
-      </form>
-      <output id="resultado-area" role="status" aria-live="polite" aria-atomic="true"></output>
-    </section>
-  </main>
+            <nav class="p-4 space-y-1">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-amber-500 text-slate-900 font-semibold">
+                    <i class="fa-solid fa-chart-line w-5"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('obras')" id="btn-obras" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-building-user w-5"></i>
+                    <span>Obras</span>
+                </button>
+                <button onclick="switchTab('orcamentos')" id="btn-orcamentos" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-file-invoice-dollar w-5"></i>
+                    <span>Orçamentos</span>
+                </button>
+                <button onclick="switchTab('funcionarios')" id="btn-funcionarios" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span>Funcionários</span>
+                </button>
+                <button onclick="switchTab('presenca')" id="btn-presenca" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-clipboard-user w-5"></i>
+                    <span>Presença</span>
+                </button>
+            </nav>
 
-  <footer role="contentinfo">
-    <p>&copy; 2026 ObraFácil</p>
-    <p id="offline-status" aria-live="polite"></p>
-  </footer>
+            <form id="login-form" class="m-4 space-y-3 border-t border-slate-700 pt-4">
+                <h2 class="text-sm font-semibold text-amber-400">Acesso à API</h2>
+                <label for="login-username" class="sr-only">Usuário</label>
+                <input id="login-username" name="username" required placeholder="Usuário" autocomplete="username" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <label for="login-password" class="sr-only">Senha</label>
+                <input id="login-password" name="password" required type="password" placeholder="Senha" autocomplete="current-password" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <button type="submit" class="w-full rounded-lg bg-amber-500 px-3 py-2 font-semibold text-slate-900 hover:bg-amber-400">Entrar</button>
+                <p id="login-status" class="text-xs text-slate-300" role="status"></p>
+            </form>
+        </aside>
 
-  <script type="module" src="/js/app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js').catch(console.warn);
-    }
-  </script>
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+
+            <section id="tab-dashboard" class="tab-content space-y-6">
+                <header class="flex justify-between items-center border-b pb-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-800">Dashboard de Obras</h1>
+                        <p class="text-slate-500 text-sm">Visão geral do progresso e ações rápidas</p>
+                    </div>
+                </header>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg font-bold text-slate-800 mb-4">Progresso Geral</h2>
+                        <div class="h-48 bg-slate-50 border border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-400">
+                            [Gráfico de Desempenho / Estatísticas]
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                        <h2 class="text-lg font-bold text-slate-800">Ações Rápidas de Envio</h2>
+                        <button onclick="sendWhatsApp('Orçamento Residencial')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition">
+                            <i class="fa-brands fa-whatsapp text-xl"></i>
+                            <span>Enviar Orçamento via WhatsApp</span>
+                        </button>
+                        <button onclick="sendWhatsApp('Planilha de Custos')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition">
+                            <i class="fa-brands fa-whatsapp text-xl"></i>
+                            <span>Enviar Planilha (PDF/CSV)</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-obras" class="tab-content hidden space-y-6">
+                <header class="border-b pb-4">
+                    <h1 class="text-2xl font-bold text-slate-800">Gestão de Obras</h1>
+                    <p class="text-slate-500 text-sm">Acompanhamento e status dos projetos</p>
+                </header>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b text-slate-500 text-sm">
+                                    <th class="py-3 px-4">Obra</th>
+                                    <th class="py-3 px-4">Cliente</th>
+                                    <th class="py-3 px-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y text-slate-700">
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Residência Jardins</td>
+                                    <td class="py-3 px-4">Ana Costa</td>
+                                    <td class="py-3 px-4"><span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs">Em Andamento</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Edifício Aurora</td>
+                                    <td class="py-3 px-4">João Silva</td>
+                                    <td class="py-3 px-4"><span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded text-xs">Concluído</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-orcamentos" class="tab-content hidden space-y-6">
+                <header class="flex justify-between items-center border-b pb-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-800">Gerenciamento de Orçamentos</h1>
+                        <p class="text-slate-500 text-sm">Propostas financeiras e envio rápido</p>
+                    </div>
+                    <button type="button" onclick="document.getElementById('orcamento-form').scrollIntoView({ behavior: 'smooth' })" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-800">+ Novo Orçamento</button>
+                </header>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                    <form id="orcamento-form" class="hidden space-y-3 border-b border-slate-200 pb-5">
+                        <h2 class="text-lg font-bold text-slate-800">Novo orçamento</h2>
+                        <label for="orcamento-titulo" class="sr-only">Título</label>
+                        <input id="orcamento-titulo" name="titulo" required placeholder="Título do orçamento" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <label for="orcamento-cliente" class="sr-only">Cliente</label>
+                        <input id="orcamento-cliente" name="cliente" placeholder="Cliente" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <label for="orcamento-descricao" class="sr-only">Descrição</label>
+                        <textarea id="orcamento-descricao" name="descricao" placeholder="Descrição" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
+                        <button type="submit" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Salvar orçamento</button>
+                        <p id="orcamento-status" class="text-sm text-slate-500" role="status"></p>
+                    </form>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Orçamentos cadastrados</h2>
+                        <ul id="orcamentos-lista" class="mt-3 divide-y divide-slate-200" aria-live="polite">
+                            <li class="text-slate-500">Faça login para carregar os orçamentos.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-funcionarios" class="tab-content hidden space-y-6">
+                <header class="border-b pb-4">
+                    <h1 class="text-2xl font-bold text-slate-800">Cadastro de Funcionários</h1>
+                    <p class="text-slate-500 text-sm">Gestão da equipe de campo e funções</p>
+                </header>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-slate-600">Listagem da equipe e atribuição de cargos.</p>
+                </div>
+            </section>
+
+            <section id="tab-presenca" class="tab-content hidden space-y-6">
+                <header class="border-b pb-4">
+                    <h1 class="text-2xl font-bold text-slate-800">Registro de Presença e Ponto</h1>
+                    <p class="text-slate-500 text-sm">Marcação de ponto diária da equipe na obra</p>
+                </header>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <button class="bg-emerald-600 text-white font-semibold px-6 py-3 rounded-lg shadow hover:bg-emerald-700">
+                        <i class="fa-solid fa-check mr-2"></i>Bater Ponto Agora
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        function switchTab(targetTab) {
+            // Ocultar todas as seções de conteúdo
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.add('hidden'));
+
+            // Remover estilos ativos de todos os botões
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-amber-500', 'text-slate-900', 'font-semibold');
+                btn.classList.add('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
+            });
+
+            // Exibir a aba selecionada
+            const activeContent = document.getElementById(`tab-${targetTab}`);
+            if (activeContent) {
+                activeContent.classList.remove('hidden');
+            }
+
+            // Aplicar estilo ativo ao botão clicado
+            const activeBtn = document.getElementById(`btn-${targetTab}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-amber-500', 'text-slate-900', 'font-semibold');
+                activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
+            }
+        }
+
+        function sendWhatsApp(tipoDocumento) {
+            const numero = "5511999999999"; // Substituir pelo número do cliente
+            const mensagem = encodeURIComponent(`Olá! Segue o documento referente a: ${tipoDocumento}.`);
+            window.open(`https://wa.me/${numero}?text=${mensagem}`, '_blank');
+        }
+    </script>
+    <script type="module" src="/js/app.js"></script>
 </body>
 </html>
