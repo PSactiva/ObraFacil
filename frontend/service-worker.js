@@ -1,4 +1,4 @@
-const CACHE_NAME = 'obrafacil-v1';
+const CACHE_NAME = 'obrafacil-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

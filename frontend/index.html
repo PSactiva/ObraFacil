@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -15,7 +16,7 @@
         <div class="p-4 flex flex-col space-y-2 border-b border-slate-800">
     <!-- Linha do Logo + Título -->
     <div class="flex items-center space-x-3">
-        <img src="/home/Activa/Área de trabalho/Projeto_IntegradorII/ObraFacil_Cursor/imagens/Logo Sinai.jpeg" alt="Logo" class="h-12 w-auto flex-shrink-0">
+        <img src="{% static 'assets/logo.jpeg' %}" alt="Logo" class="h-12 w-auto flex-shrink-0">
         <span class="font-bold text-lg tracking-wide leading-tight max-w-[120px]">
             SINAI EMPREITEIRA
         </span>
@@ -131,7 +132,6 @@
                         <h1 class="text-2xl font-bold text-slate-800">Gerenciamento de Orçamentos</h1>
                         <p class="text-slate-500 text-sm">Propostas financeiras e envio rápido</p>
                     </div>
-<<<<<<< HEAD
                     <button type="button" onclick="document.getElementById('orcamento-form').scrollIntoView({ behavior: 'smooth' })" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-800">+ Novo Orçamento</button>
                 </header>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
@@ -152,12 +152,6 @@
                             <li class="text-slate-500">Faça login para carregar os orçamentos.</li>
                         </ul>
                     </div>
-=======
-                    <button class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-800">+ Novo Orçamento</button>
-                </header>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <p class="text-slate-600">Lista de orçamentos cadastrados e pendentes de aprovação.</p>
->>>>>>> main
                 </div>
             </section>
 
