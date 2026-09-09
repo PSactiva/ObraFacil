@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "apps.orcamentos",
     "apps.materiais",
     "apps.calculos",
+    "apps.obras",
 ]
 
 MIDDLEWARE = [

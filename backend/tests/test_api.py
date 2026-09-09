@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 
 
@@ -47,3 +48,36 @@ def test_rejeitar_credenciais_invalidas_para_token(client, user):
     )
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_cadastrar_usuario(client):
+    response = client.post(
+        "/api/auth/register/",
+        {
+            "username": "novo-usuario",
+            "password": "senha-forte-123",
+            "password_confirmation": "senha-forte-123",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["username"] == "novo-usuario"
+    assert User.objects.filter(username="novo-usuario").exists()
+
+
+@pytest.mark.django_db
+def test_rejeitar_cadastro_com_senhas_diferentes(client):
+    response = client.post(
+        "/api/auth/register/",
+        {
+            "username": "novo-usuario",
+            "password": "senha-forte-123",
+            "password_confirmation": "outra-senha-123",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "password_confirmation" in response.json()
