@@ -4,8 +4,12 @@ import {
   calcularPiso,
   estimarCusto,
   getToken,
+  getCurrentUser,
   get,
   login,
+  logout,
+  requestPasswordReset,
+  confirmPasswordReset,
   patch,
   post,
   register,
@@ -19,6 +23,13 @@ const loginForm = document.getElementById('login-form');
 const loginStatus = document.getElementById('login-status');
 const registerForm = document.getElementById('register-form');
 const registerStatus = document.getElementById('register-status');
+const passwordResetRequestForm = document.getElementById('password-reset-request-form');
+const passwordResetRequestStatus = document.getElementById('password-reset-request-status');
+const passwordResetConfirmForm = document.getElementById('password-reset-confirm-form');
+const passwordResetConfirmStatus = document.getElementById('password-reset-confirm-status');
+const sessionPanel = document.getElementById('session-panel');
+const sessionUsername = document.getElementById('session-username');
+const logoutButton = document.getElementById('logout-button');
 const orcamentoForm = document.getElementById('orcamento-form');
 const orcamentosLista = document.getElementById('orcamentos-lista');
 const itensContainer = document.getElementById('orcamento-itens');
@@ -255,6 +266,23 @@ function updateOnlineStatus() {
   }
 }
 
+function atualizarEstadoDaSessao(usuario = null) {
+  const autenticado = Boolean(usuario);
+  loginForm?.classList.toggle('hidden', autenticado);
+  registerForm?.classList.toggle('hidden', autenticado);
+  sessionPanel?.classList.toggle('hidden', !autenticado);
+  if (sessionUsername) sessionUsername.textContent = usuario?.username || '';
+  orcamentoForm?.classList.toggle('hidden', !autenticado);
+  materialForm?.classList.toggle('hidden', !autenticado);
+  obraForm?.classList.toggle('hidden', !autenticado);
+}
+
+async function carregarDadosAutenticados() {
+  await carregarMateriais();
+  await carregarObras();
+  await carregarOrcamentos();
+}
+
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
@@ -294,13 +322,10 @@ loginForm?.addEventListener('submit', async (event) => {
   loginStatus.textContent = 'Entrando...';
   try {
     await login(formData.get('username'), formData.get('password'));
+    const usuario = await getCurrentUser();
     loginStatus.textContent = 'Login realizado.';
-    orcamentoForm?.classList.remove('hidden');
-    materialForm?.classList.remove('hidden');
-    obraForm?.classList.remove('hidden');
-    await carregarMateriais();
-    await carregarObras();
-    await carregarOrcamentos();
+    atualizarEstadoDaSessao(usuario);
+    await carregarDadosAutenticados();
   } catch {
     loginStatus.textContent = 'Usuário ou senha inválidos.';
   }
@@ -313,20 +338,50 @@ registerForm?.addEventListener('submit', async (event) => {
   try {
     await register(
       formData.get('username'),
+      formData.get('email'),
       formData.get('password'),
       formData.get('password_confirmation'),
     );
     await login(formData.get('username'), formData.get('password'));
+    const usuario = await getCurrentUser();
     registerStatus.textContent = 'Usuário cadastrado e conectado.';
     registerForm.reset();
-    orcamentoForm?.classList.remove('hidden');
-    materialForm?.classList.remove('hidden');
-    obraForm?.classList.remove('hidden');
-    await carregarMateriais();
-    await carregarObras();
-    await carregarOrcamentos();
+    atualizarEstadoDaSessao(usuario);
+    await carregarDadosAutenticados();
   } catch (error) {
     registerStatus.textContent = error.message || 'Não foi possível conectar ao servidor.';
+  }
+});
+
+passwordResetRequestForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  passwordResetRequestStatus.textContent = 'Enviando...';
+  try {
+    await requestPasswordReset(new FormData(passwordResetRequestForm).get('email'));
+    passwordResetRequestStatus.textContent = 'Se o e-mail estiver cadastrado, as instruções foram enviadas.';
+    passwordResetRequestForm.reset();
+  } catch {
+    passwordResetRequestStatus.textContent = 'Não foi possível solicitar a recuperação agora.';
+  }
+});
+
+passwordResetConfirmForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const parametros = new URLSearchParams(window.location.search);
+  const formData = new FormData(passwordResetConfirmForm);
+  passwordResetConfirmStatus.textContent = 'Redefinindo...';
+  try {
+    await confirmPasswordReset(
+      parametros.get('uid'),
+      parametros.get('token'),
+      formData.get('password'),
+      formData.get('password_confirmation'),
+    );
+    passwordResetConfirmStatus.textContent = 'Senha redefinida. Você já pode entrar.';
+    passwordResetConfirmForm.reset();
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } catch (error) {
+    passwordResetConfirmStatus.textContent = error.message || 'Link inválido ou expirado.';
   }
 });
 
@@ -361,12 +416,37 @@ orcamentoForm?.addEventListener('submit', async (event) => {
   }
 });
 
-if (getToken()) {
-  orcamentoForm?.classList.remove('hidden');
-  materialForm?.classList.remove('hidden');
-  obraForm?.classList.remove('hidden');
-  carregarOrcamentos();
+logoutButton?.addEventListener('click', async () => {
+  logoutButton.disabled = true;
+  try {
+    await logout();
+  } finally {
+    atualizarEstadoDaSessao();
+    orcamentosLista && (orcamentosLista.innerHTML = '<li class="text-slate-500">Faça login para carregar os orçamentos.</li>');
+    loginStatus.textContent = 'Sessão encerrada.';
+    logoutButton.disabled = false;
+  }
+});
+
+async function iniciarAutenticacao() {
+  const parametros = new URLSearchParams(window.location.search);
+  if (parametros.has('uid') && parametros.has('token')) {
+    passwordResetConfirmForm?.classList.remove('hidden');
+  }
+  if (!getToken()) {
+    atualizarEstadoDaSessao();
+    return;
+  }
+  try {
+    const usuario = await getCurrentUser();
+    atualizarEstadoDaSessao(usuario);
+    await carregarDadosAutenticados();
+  } catch {
+    atualizarEstadoDaSessao();
+  }
 }
+
+iniciarAutenticacao();
 
 carregarMateriais();
 carregarObras();

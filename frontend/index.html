@@ -8,15 +8,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 font-sans antialiased">
+<body class="overflow-x-hidden bg-gray-100 font-sans antialiased">
 
     <div class="min-h-screen flex flex-col md:flex-row">
 
-        <aside class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0">
+        <div id="menu-overlay" class="fixed inset-0 z-30 hidden bg-slate-950/60 md:hidden" aria-hidden="true"></div>
+
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] -translate-x-full flex-col overflow-y-auto bg-slate-900 text-white shadow-2xl transition-transform duration-200 ease-out md:static md:z-auto md:w-64 md:max-w-none md:translate-x-0 md:shadow-none" aria-label="Menu principal">
             <div class="p-4 flex flex-col space-y-2 border-b border-slate-800">
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center space-x-3">
                     <img src="{% static 'assets/logo.jpeg' %}" alt="Logo SINAI Empreiteira" class="h-12 w-auto flex-shrink-0">
                     <span class="font-bold text-lg tracking-wide leading-tight max-w-[120px]">SINAI EMPREITEIRA</span>
+                    </div>
+                    <button id="close-menu" type="button" class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white md:hidden" aria-label="Fechar menu">
+                        <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
+                    </button>
                 </div>
                 <p class="text-[11px] text-amber-500 font-medium leading-tight text-center md:text-left">Construindo Soluções. Realizando Sonhos.</p>
             </div>
@@ -62,10 +69,20 @@
                 <p id="login-status" class="text-xs text-slate-300" role="status"></p>
             </form>
 
+            <form id="password-reset-request-form" class="m-4 space-y-3 border-t border-slate-700 pt-4">
+                <h2 class="text-sm font-semibold text-amber-400">Recuperar acesso</h2>
+                <label for="reset-email" class="sr-only">E-mail cadastrado</label>
+                <input id="reset-email" name="email" required type="email" placeholder="E-mail cadastrado" autocomplete="email" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <button type="submit" class="w-full rounded-lg border border-amber-500 px-3 py-2 font-semibold text-amber-400 hover:bg-amber-500 hover:text-slate-900">Enviar instruções</button>
+                <p id="password-reset-request-status" class="text-xs text-slate-300" role="status"></p>
+            </form>
+
             <form id="register-form" class="m-4 space-y-3 border-t border-slate-700 pt-4">
                 <h2 class="text-sm font-semibold text-amber-400">Criar usuário</h2>
                 <label for="register-username" class="sr-only">Novo usuário</label>
                 <input id="register-username" name="username" required placeholder="Novo usuário" autocomplete="username" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <label for="register-email" class="sr-only">E-mail</label>
+                <input id="register-email" name="email" required type="email" placeholder="E-mail para recuperação" autocomplete="email" class="w-full rounded-lg px-3 py-2 text-slate-900">
                 <label for="register-password" class="sr-only">Nova senha</label>
                 <input id="register-password" name="password" required type="password" placeholder="Nova senha" autocomplete="new-password" class="w-full rounded-lg px-3 py-2 text-slate-900">
                 <label for="register-password-confirmation" class="sr-only">Confirmar senha</label>
@@ -73,9 +90,28 @@
                 <button type="submit" class="w-full rounded-lg border border-amber-500 px-3 py-2 font-semibold text-amber-400 hover:bg-amber-500 hover:text-slate-900">Cadastrar</button>
                 <p id="register-status" class="text-xs text-slate-300" role="status"></p>
             </form>
+
+            <form id="password-reset-confirm-form" class="hidden m-4 space-y-3 border-t border-slate-700 pt-4">
+                <h2 class="text-sm font-semibold text-amber-400">Definir nova senha</h2>
+                <label for="reset-new-password" class="sr-only">Nova senha</label>
+                <input id="reset-new-password" name="password" required type="password" placeholder="Nova senha" autocomplete="new-password" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <label for="reset-new-password-confirmation" class="sr-only">Confirmar nova senha</label>
+                <input id="reset-new-password-confirmation" name="password_confirmation" required type="password" placeholder="Confirmar nova senha" autocomplete="new-password" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <button type="submit" class="w-full rounded-lg bg-amber-500 px-3 py-2 font-semibold text-slate-900 hover:bg-amber-400">Redefinir senha</button>
+                <p id="password-reset-confirm-status" class="text-xs text-slate-300" role="status"></p>
+            </form>
+
+            <div id="session-panel" class="hidden m-4 space-y-3 border-t border-slate-700 pt-4">
+                <p class="text-xs text-slate-300">Conectado como <strong id="session-username" class="text-white"></strong></p>
+                <button id="logout-button" type="button" class="w-full rounded-lg border border-red-300 px-3 py-2 font-semibold text-red-200 hover:bg-red-900">Sair</button>
+            </div>
         </aside>
 
-        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main class="min-w-0 flex-1 overflow-y-auto p-4 md:p-8">
+            <button id="open-menu" type="button" class="mb-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 md:hidden" aria-controls="sidebar" aria-expanded="false">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+                <span>Menu</span>
+            </button>
 
             <section id="tab-dashboard" class="tab-content space-y-6">
                 <header class="flex justify-between items-center border-b pb-4">
@@ -324,6 +360,31 @@
     </div>
 
     <script>
+        const sidebar = document.getElementById('sidebar');
+        const openMenuButton = document.getElementById('open-menu');
+        const closeMenuButton = document.getElementById('close-menu');
+        const menuOverlay = document.getElementById('menu-overlay');
+
+        function setMenuOpen(isOpen) {
+            const isMobile = window.innerWidth < 768;
+            const shouldOpen = !isMobile || isOpen;
+            sidebar.classList.toggle('-translate-x-full', !shouldOpen);
+            sidebar.classList.toggle('translate-x-0', shouldOpen);
+            menuOverlay.classList.toggle('hidden', !isMobile || !isOpen);
+            openMenuButton?.setAttribute('aria-expanded', String(isMobile && isOpen));
+            document.body.classList.toggle('overflow-hidden', isMobile && isOpen);
+            if (isMobile && isOpen) closeMenuButton?.focus();
+            else if (isMobile) openMenuButton?.focus();
+        }
+
+        openMenuButton?.addEventListener('click', () => setMenuOpen(true));
+        closeMenuButton?.addEventListener('click', () => setMenuOpen(false));
+        menuOverlay?.addEventListener('click', () => setMenuOpen(false));
+        window.addEventListener('resize', () => setMenuOpen(false));
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') setMenuOpen(false);
+        });
+
         function switchTab(targetTab) {
             // Ocultar todas as seções de conteúdo
             const contents = document.querySelectorAll('.tab-content');
@@ -348,6 +409,7 @@
                 activeBtn.classList.add('bg-amber-500', 'text-slate-900', 'font-semibold');
                 activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
             }
+            if (window.innerWidth < 768) setMenuOpen(false);
         }
 
         function sendWhatsApp(tipoDocumento) {
