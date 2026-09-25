@@ -8,25 +8,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 font-sans antialiased">
+<body class="overflow-x-hidden bg-gray-100 font-sans antialiased">
 
     <div class="min-h-screen flex flex-col md:flex-row">
 
-        <aside class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0">
-        <div class="p-4 flex flex-col space-y-2 border-b border-slate-800">
-    <!-- Linha do Logo + Título -->
-    <div class="flex items-center space-x-3">
-        <img src="{% static 'assets/logo.jpeg' %}" alt="Logo" class="h-12 w-auto flex-shrink-0">
-        <span class="font-bold text-lg tracking-wide leading-tight max-w-[120px]">
-            SINAI EMPREITEIRA
-        </span>
-    </div>
+        <div id="menu-overlay" class="fixed inset-0 z-30 hidden bg-slate-950/60 md:hidden" aria-hidden="true"></div>
 
-    <!-- Slogan abaixo da imagem e do título -->
-    <p class="text-[11px] text-amber-500 font-medium leading-tight text-center md:text-left">
-        Construindo Soluções. Realizando Sonhos.
-    </p>
-</div>
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] -translate-x-full flex-col overflow-y-auto bg-slate-900 text-white shadow-2xl transition-transform duration-200 ease-out md:static md:z-auto md:w-64 md:max-w-none md:translate-x-0 md:shadow-none" aria-label="Menu principal">
+            <div class="p-4 flex flex-col space-y-2 border-b border-slate-800">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center space-x-3">
+                    <img src="{% static 'assets/logo.jpeg' %}" alt="Logo SINAI Empreiteira" class="h-12 w-auto flex-shrink-0">
+                    <span class="font-bold text-lg tracking-wide leading-tight max-w-[120px]">SINAI EMPREITEIRA</span>
+                    </div>
+                    <button id="close-menu" type="button" class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white md:hidden" aria-label="Fechar menu">
+                        <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <p class="text-[11px] text-amber-500 font-medium leading-tight text-center md:text-left">Construindo Soluções. Realizando Sonhos.</p>
+            </div>
 
             <nav class="p-4 space-y-1">
                 <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-amber-500 text-slate-900 font-semibold">
@@ -40,6 +40,14 @@
                 <button onclick="switchTab('orcamentos')" id="btn-orcamentos" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
                     <i class="fa-solid fa-file-invoice-dollar w-5"></i>
                     <span>Orçamentos</span>
+                </button>
+                <button onclick="switchTab('calculos')" id="btn-calculos" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-calculator w-5"></i>
+                    <span>Cálculos</span>
+                </button>
+                <button onclick="switchTab('materiais')" id="btn-materiais" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-boxes-stacked w-5"></i>
+                    <span>Materiais</span>
                 </button>
                 <button onclick="switchTab('funcionarios')" id="btn-funcionarios" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
                     <i class="fa-solid fa-users w-5"></i>
@@ -60,15 +68,56 @@
                 <button type="submit" class="w-full rounded-lg bg-amber-500 px-3 py-2 font-semibold text-slate-900 hover:bg-amber-400">Entrar</button>
                 <p id="login-status" class="text-xs text-slate-300" role="status"></p>
             </form>
+
+            <form id="password-reset-request-form" class="m-4 space-y-3 border-t border-slate-700 pt-4">
+                <h2 class="text-sm font-semibold text-amber-400">Recuperar acesso</h2>
+                <label for="reset-email" class="sr-only">E-mail cadastrado</label>
+                <input id="reset-email" name="email" required type="email" placeholder="E-mail cadastrado" autocomplete="email" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <button type="submit" class="w-full rounded-lg border border-amber-500 px-3 py-2 font-semibold text-amber-400 hover:bg-amber-500 hover:text-slate-900">Enviar instruções</button>
+                <p id="password-reset-request-status" class="text-xs text-slate-300" role="status"></p>
+            </form>
+
+            <form id="register-form" class="m-4 space-y-3 border-t border-slate-700 pt-4">
+                <h2 class="text-sm font-semibold text-amber-400">Criar usuário</h2>
+                <label for="register-username" class="sr-only">Novo usuário</label>
+                <input id="register-username" name="username" required placeholder="Novo usuário" autocomplete="username" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <label for="register-email" class="sr-only">E-mail</label>
+                <input id="register-email" name="email" required type="email" placeholder="E-mail para recuperação" autocomplete="email" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <label for="register-password" class="sr-only">Nova senha</label>
+                <input id="register-password" name="password" required type="password" placeholder="Nova senha" autocomplete="new-password" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <label for="register-password-confirmation" class="sr-only">Confirmar senha</label>
+                <input id="register-password-confirmation" name="password_confirmation" required type="password" placeholder="Confirmar senha" autocomplete="new-password" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <button type="submit" class="w-full rounded-lg border border-amber-500 px-3 py-2 font-semibold text-amber-400 hover:bg-amber-500 hover:text-slate-900">Cadastrar</button>
+                <p id="register-status" class="text-xs text-slate-300" role="status"></p>
+            </form>
+
+            <form id="password-reset-confirm-form" class="hidden m-4 space-y-3 border-t border-slate-700 pt-4">
+                <h2 class="text-sm font-semibold text-amber-400">Definir nova senha</h2>
+                <label for="reset-new-password" class="sr-only">Nova senha</label>
+                <input id="reset-new-password" name="password" required type="password" placeholder="Nova senha" autocomplete="new-password" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <label for="reset-new-password-confirmation" class="sr-only">Confirmar nova senha</label>
+                <input id="reset-new-password-confirmation" name="password_confirmation" required type="password" placeholder="Confirmar nova senha" autocomplete="new-password" class="w-full rounded-lg px-3 py-2 text-slate-900">
+                <button type="submit" class="w-full rounded-lg bg-amber-500 px-3 py-2 font-semibold text-slate-900 hover:bg-amber-400">Redefinir senha</button>
+                <p id="password-reset-confirm-status" class="text-xs text-slate-300" role="status"></p>
+            </form>
+
+            <div id="session-panel" class="hidden m-4 space-y-3 border-t border-slate-700 pt-4">
+                <p class="text-xs text-slate-300">Conectado como <strong id="session-username" class="text-white"></strong></p>
+                <button id="logout-button" type="button" class="w-full rounded-lg border border-red-300 px-3 py-2 font-semibold text-red-200 hover:bg-red-900">Sair</button>
+            </div>
         </aside>
 
-        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main class="min-w-0 flex-1 overflow-y-auto p-4 md:p-8">
+            <button id="open-menu" type="button" class="mb-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 md:hidden" aria-controls="sidebar" aria-expanded="false">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+                <span>Menu</span>
+            </button>
 
             <section id="tab-dashboard" class="tab-content space-y-6">
                 <header class="flex justify-between items-center border-b pb-4">
                     <div>
-                        <h1 class="text-2xl font-bold text-slate-800">Dashboard de Obras</h1>
-                        <p class="text-slate-500 text-sm">Visão geral do progresso e ações rápidas</p>
+                        <h1 class="text-2xl font-bold text-slate-800">Dashboard SINAI EMPREITEIRA</h1>
+                        <p class="text-slate-500 text-sm">Construindo Soluções. Realizando Sonhos.</p>
                     </div>
                 </header>
 
@@ -97,29 +146,43 @@
             <section id="tab-obras" class="tab-content hidden space-y-6">
                 <header class="border-b pb-4">
                     <h1 class="text-2xl font-bold text-slate-800">Gestão de Obras</h1>
-                    <p class="text-slate-500 text-sm">Acompanhamento e status dos projetos</p>
+                    <p class="text-slate-500 text-sm">Cadastre projetos e acompanhe seus prazos</p>
                 </header>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                    <form id="obra-form" class="hidden space-y-3 border-b border-slate-200 pb-5">
+                        <h2 id="obra-form-titulo" class="text-lg font-bold text-slate-800">Nova obra</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input id="obra-nome" name="nome" required placeholder="Nome da obra" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="obra-cliente" name="cliente" required placeholder="Cliente" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="obra-endereco" name="endereco" placeholder="Endereço" class="rounded-lg border border-slate-300 px-3 py-2 md:col-span-2">
+                            <select id="obra-status" name="status" class="rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="planejada">Planejada</option>
+                                <option value="em_andamento">Em andamento</option>
+                                <option value="concluida">Concluída</option>
+                                <option value="pausada">Pausada</option>
+                            </select>
+                            <input id="obra-data-inicio" name="data_inicio" type="date" aria-label="Data de início" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="obra-previsao" name="previsao_conclusao" type="date" aria-label="Previsão de conclusão" class="rounded-lg border border-slate-300 px-3 py-2">
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="submit" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Salvar obra</button>
+                            <button id="cancelar-obra" type="button" class="hidden rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+                        </div>
+                        <p id="obra-status-msg" class="text-sm text-slate-500" role="status"></p>
+                    </form>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="border-b text-slate-500 text-sm">
                                     <th class="py-3 px-4">Obra</th>
                                     <th class="py-3 px-4">Cliente</th>
+                                    <th class="py-3 px-4">Prazo</th>
                                     <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y text-slate-700">
-                                <tr>
-                                    <td class="py-3 px-4 font-semibold">Residência Jardins</td>
-                                    <td class="py-3 px-4">Ana Costa</td>
-                                    <td class="py-3 px-4"><span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs">Em Andamento</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="py-3 px-4 font-semibold">Edifício Aurora</td>
-                                    <td class="py-3 px-4">João Silva</td>
-                                    <td class="py-3 px-4"><span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded text-xs">Concluído</span></td>
-                                </tr>
+                            <tbody id="obras-lista" class="divide-y text-slate-700">
+                                <tr><td colspan="5" class="py-4 px-4 text-slate-500">Carregando obras...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -136,14 +199,26 @@
                 </header>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
                     <form id="orcamento-form" class="hidden space-y-3 border-b border-slate-200 pb-5">
-                        <h2 class="text-lg font-bold text-slate-800">Novo orçamento</h2>
+                        <h2 id="orcamento-form-titulo" class="text-lg font-bold text-slate-800">Novo orçamento</h2>
                         <label for="orcamento-titulo" class="sr-only">Título</label>
                         <input id="orcamento-titulo" name="titulo" required placeholder="Título do orçamento" class="w-full rounded-lg border border-slate-300 px-3 py-2">
                         <label for="orcamento-cliente" class="sr-only">Cliente</label>
                         <input id="orcamento-cliente" name="cliente" placeholder="Cliente" class="w-full rounded-lg border border-slate-300 px-3 py-2">
                         <label for="orcamento-descricao" class="sr-only">Descrição</label>
                         <textarea id="orcamento-descricao" name="descricao" placeholder="Descrição" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                        <button type="submit" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Salvar orçamento</button>
+                        <div class="border-t border-slate-200 pt-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <h3 class="font-semibold text-slate-800">Materiais</h3>
+                                <button id="adicionar-item" type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">+ Adicionar material</button>
+                            </div>
+                            <p class="mt-1 text-sm text-slate-500">Selecione os materiais e informe as quantidades.</p>
+                            <div id="orcamento-itens" class="mt-3 space-y-3"></div>
+                            <p id="itens-vazio" class="mt-3 text-sm text-slate-500">Nenhum material adicionado.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="salvar-orcamento" type="submit" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Salvar orçamento</button>
+                            <button id="cancelar-edicao" type="button" class="hidden rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Cancelar edição</button>
+                        </div>
                         <p id="orcamento-status" class="text-sm text-slate-500" role="status"></p>
                     </form>
                     <div>
@@ -155,13 +230,151 @@
                 </div>
             </section>
 
+            <section id="tab-calculos" class="tab-content hidden space-y-6">
+                <header class="border-b pb-4">
+                    <h1 class="text-2xl font-bold text-slate-800">Calculadora de Obra</h1>
+                    <p class="text-slate-500 text-sm">Estime áreas, volumes, perdas e custos rapidamente</p>
+                </header>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <form data-calculo="area" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Área</h2>
+                            <p class="text-sm text-slate-500">Calcule a área de um ambiente em metros quadrados.</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input name="comprimento" required min="0" step="0.01" type="number" placeholder="Comprimento (m)" aria-label="Comprimento em metros" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input name="largura" required min="0" step="0.01" type="number" placeholder="Largura (m)" aria-label="Largura em metros" class="rounded-lg border border-slate-300 px-3 py-2">
+                        </div>
+                        <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">Calcular área</button>
+                        <p data-resultado class="min-h-6 text-sm font-semibold text-slate-700" role="status"></p>
+                    </form>
+
+                    <form data-calculo="concreto" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Volume de concreto</h2>
+                            <p class="text-sm text-slate-500">Estime o volume necessário para uma área.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <input name="comprimento" required min="0" step="0.01" type="number" placeholder="Comprimento (m)" aria-label="Comprimento em metros" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input name="largura" required min="0" step="0.01" type="number" placeholder="Largura (m)" aria-label="Largura em metros" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input name="espessura" required min="0" step="0.01" type="number" placeholder="Espessura (m)" aria-label="Espessura em metros" class="rounded-lg border border-slate-300 px-3 py-2">
+                        </div>
+                        <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">Calcular volume</button>
+                        <p data-resultado class="min-h-6 text-sm font-semibold text-slate-700" role="status"></p>
+                    </form>
+
+                    <form data-calculo="piso" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Piso com perda</h2>
+                            <p class="text-sm text-slate-500">Calcule a área de compra considerando a perda.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <input name="comprimento" required min="0" step="0.01" type="number" placeholder="Comprimento (m)" aria-label="Comprimento em metros" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input name="largura" required min="0" step="0.01" type="number" placeholder="Largura (m)" aria-label="Largura em metros" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input name="perda_percentual" value="10" required min="0" max="50" step="0.1" type="number" placeholder="Perda (%)" aria-label="Perda percentual" class="rounded-lg border border-slate-300 px-3 py-2">
+                        </div>
+                        <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">Calcular piso</button>
+                        <p data-resultado class="min-h-6 text-sm font-semibold text-slate-700" role="status"></p>
+                    </form>
+
+                    <form data-calculo="custo" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Custo estimado</h2>
+                            <p class="text-sm text-slate-500">Estime o custo total a partir da área e do preço por m².</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input name="area_m2" required min="0" step="0.01" type="number" placeholder="Área (m²)" aria-label="Área em metros quadrados" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input name="preco_unitario" required min="0" step="0.01" type="number" placeholder="Preço por m² (R$)" aria-label="Preço por metro quadrado" class="rounded-lg border border-slate-300 px-3 py-2">
+                        </div>
+                        <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">Estimar custo</button>
+                        <p data-resultado class="min-h-6 text-sm font-semibold text-slate-700" role="status"></p>
+                    </form>
+                </div>
+            </section>
+
+            <section id="tab-materiais" class="tab-content hidden space-y-6">
+                <header class="border-b pb-4">
+                    <h1 class="text-2xl font-bold text-slate-800">Catálogo de Materiais</h1>
+                    <p class="text-slate-500 text-sm">Consulte materiais ativos e preços unitários</p>
+                </header>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                    <form id="material-form" class="hidden space-y-3 border-b border-slate-200 pb-5">
+                        <h2 id="material-form-titulo" class="text-lg font-bold text-slate-800">Novo material</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input id="material-nome" name="nome" required placeholder="Nome do material" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="material-categoria" name="categoria" placeholder="Categoria" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="material-unidade" name="unidade" required placeholder="Unidade (kg, m², un)" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="material-preco" name="preco_unitario" required min="0" step="0.01" type="number" placeholder="Preço unitário (R$)" class="rounded-lg border border-slate-300 px-3 py-2">
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="submit" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Salvar material</button>
+                            <button id="cancelar-material" type="button" class="hidden rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+                        </div>
+                        <p id="material-status" class="text-sm text-slate-500" role="status"></p>
+                    </form>
+                    <label for="buscar-material" class="sr-only">Buscar material</label>
+                    <input id="buscar-material" type="search" placeholder="Buscar por nome ou categoria" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b text-slate-500 text-sm">
+                                    <th class="py-3 px-4">Material</th>
+                                    <th class="py-3 px-4">Categoria</th>
+                                    <th class="py-3 px-4">Unidade</th>
+                                    <th class="py-3 px-4">Preço unitário</th>
+                                    <th class="py-3 px-4">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materiais-lista" class="divide-y text-slate-700">
+                                <tr><td colspan="5" class="py-4 px-4 text-slate-500">Carregando materiais...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <section id="tab-funcionarios" class="tab-content hidden space-y-6">
                 <header class="border-b pb-4">
                     <h1 class="text-2xl font-bold text-slate-800">Cadastro de Funcionários</h1>
                     <p class="text-slate-500 text-sm">Gestão da equipe de campo e funções</p>
+                    <button id="novo-funcionario" type="button" class="hidden mt-3 rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Novo funcionário</button>
                 </header>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <p class="text-slate-600">Listagem da equipe e atribuição de cargos.</p>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                    <form id="funcionario-form" class="hidden space-y-3 border-b border-slate-200 pb-5">
+                        <h2 id="funcionario-form-titulo" class="text-lg font-bold text-slate-800">Novo funcionário</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input id="funcionario-nome" name="nome" required placeholder="Nome completo" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="funcionario-cargo" name="cargo" required placeholder="Cargo/Função" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="funcionario-email" name="email" type="email" placeholder="E-mail (opcional)" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="funcionario-telefone" name="telefone" placeholder="Telefone (opcional)" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <label for="funcionario-ativo" class="flex items-center space-x-2 md:col-span-2">
+                                <input id="funcionario-ativo" name="ativo" type="checkbox" checked class="rounded border-slate-300">
+                                <span class="text-sm font-medium text-slate-700">Funcionário ativo</span>
+                            </label>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="submit" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Salvar funcionário</button>
+                            <button id="cancelar-funcionario" type="button" class="hidden rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+                        </div>
+                    </form>
+                    <p id="funcionario-status-msg" class="text-sm text-slate-500" role="status"></p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b text-slate-500 text-sm">
+                                    <th class="py-3 px-4">Nome</th>
+                                    <th class="py-3 px-4">Cargo</th>
+                                    <th class="py-3 px-4">Contato</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="funcionarios-lista" class="divide-y text-slate-700">
+                                <tr><td colspan="5" class="py-4 px-4 text-slate-500">Faça login para carregar os funcionários.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -170,10 +383,46 @@
                     <h1 class="text-2xl font-bold text-slate-800">Registro de Presença e Ponto</h1>
                     <p class="text-slate-500 text-sm">Marcação de ponto diária da equipe na obra</p>
                 </header>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <button class="bg-emerald-600 text-white font-semibold px-6 py-3 rounded-lg shadow hover:bg-emerald-700">
-                        <i class="fa-solid fa-check mr-2"></i>Bater Ponto Agora
-                    </button>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                    <form id="presenca-form" class="hidden space-y-3 border-b border-slate-200 pb-5">
+                        <h2 class="text-lg font-bold text-slate-800">Registrar presença de hoje</h2>
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <label class="space-y-1 text-sm font-medium text-slate-700">
+                                <span>Funcionário</span>
+                                <select id="presenca-funcionario" name="funcionario" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                    <option value="">Selecione um funcionário</option>
+                                </select>
+                            </label>
+                            <label class="space-y-1 text-sm font-medium text-slate-700">
+                                <span>Obra (opcional)</span>
+                                <select id="presenca-obra" name="obra" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                    <option value="">Sem obra vinculada</option>
+                                </select>
+                            </label>
+                        </div>
+                        <button id="registrar-presenca" type="submit" class="rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white shadow hover:bg-emerald-700">
+                            <i class="fa-solid fa-check mr-2" aria-hidden="true"></i>Registrar presença agora
+                        </button>
+                    </form>
+                    <p id="presenca-status" class="text-sm text-slate-500" role="status">Faça login para registrar e consultar presenças.</p>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Presenças de hoje</h2>
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b text-slate-500 text-sm">
+                                        <th class="py-3 px-4">Funcionário</th>
+                                        <th class="py-3 px-4">Obra</th>
+                                        <th class="py-3 px-4">Data</th>
+                                        <th class="py-3 px-4">Horário do registro</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="presencas-lista" class="divide-y text-slate-700">
+                                    <tr><td colspan="4" class="py-4 px-4 text-slate-500">Faça login para carregar as presenças.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -181,6 +430,31 @@
     </div>
 
     <script>
+        const sidebar = document.getElementById('sidebar');
+        const openMenuButton = document.getElementById('open-menu');
+        const closeMenuButton = document.getElementById('close-menu');
+        const menuOverlay = document.getElementById('menu-overlay');
+
+        function setMenuOpen(isOpen) {
+            const isMobile = window.innerWidth < 768;
+            const shouldOpen = !isMobile || isOpen;
+            sidebar.classList.toggle('-translate-x-full', !shouldOpen);
+            sidebar.classList.toggle('translate-x-0', shouldOpen);
+            menuOverlay.classList.toggle('hidden', !isMobile || !isOpen);
+            openMenuButton?.setAttribute('aria-expanded', String(isMobile && isOpen));
+            document.body.classList.toggle('overflow-hidden', isMobile && isOpen);
+            if (isMobile && isOpen) closeMenuButton?.focus();
+            else if (isMobile) openMenuButton?.focus();
+        }
+
+        openMenuButton?.addEventListener('click', () => setMenuOpen(true));
+        closeMenuButton?.addEventListener('click', () => setMenuOpen(false));
+        menuOverlay?.addEventListener('click', () => setMenuOpen(false));
+        window.addEventListener('resize', () => setMenuOpen(false));
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') setMenuOpen(false);
+        });
+
         function switchTab(targetTab) {
             // Ocultar todas as seções de conteúdo
             const contents = document.querySelectorAll('.tab-content');
@@ -205,6 +479,7 @@
                 activeBtn.classList.add('bg-amber-500', 'text-slate-900', 'font-semibold');
                 activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
             }
+            if (window.innerWidth < 768) setMenuOpen(false);
         }
 
         function sendWhatsApp(tipoDocumento) {
@@ -213,9 +488,6 @@
             window.open(`https://wa.me/${numero}?text=${mensagem}`, '_blank');
         }
     </script>
-<<<<<<< HEAD
-    <script type="module" src="/js/app.js"></script>
-=======
->>>>>>> main
+    <script type="module" src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

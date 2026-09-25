@@ -1,12 +1,13 @@
-const CACHE_NAME = 'obrafacil-v2';
+const CACHE_NAME = 'obrafacil-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/css/main.css',
-  '/css/accessibility.css',
-  '/js/app.js',
-  '/js/api.js',
-  '/manifest.json',
+  '/static/css/main.css',
+  '/static/css/accessibility.css',
+  '/static/js/app.js',
+  '/static/js/api.js',
+  '/static/manifest.json',
+  '/static/assets/logo.jpeg',
 ];
 
 self.addEventListener('install', (event) => {
