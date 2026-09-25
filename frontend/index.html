@@ -168,7 +168,7 @@
                             <button type="submit" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Salvar obra</button>
                             <button id="cancelar-obra" type="button" class="hidden rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
                         </div>
-                        <p id="obra-status" class="text-sm text-slate-500" role="status"></p>
+                        <p id="obra-status-msg" class="text-sm text-slate-500" role="status"></p>
                     </form>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
@@ -338,9 +338,43 @@
                 <header class="border-b pb-4">
                     <h1 class="text-2xl font-bold text-slate-800">Cadastro de Funcionários</h1>
                     <p class="text-slate-500 text-sm">Gestão da equipe de campo e funções</p>
+                    <button id="novo-funcionario" type="button" class="hidden mt-3 rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Novo funcionário</button>
                 </header>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <p class="text-slate-600">Listagem da equipe e atribuição de cargos.</p>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                    <form id="funcionario-form" class="hidden space-y-3 border-b border-slate-200 pb-5">
+                        <h2 id="funcionario-form-titulo" class="text-lg font-bold text-slate-800">Novo funcionário</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input id="funcionario-nome" name="nome" required placeholder="Nome completo" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="funcionario-cargo" name="cargo" required placeholder="Cargo/Função" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="funcionario-email" name="email" type="email" placeholder="E-mail (opcional)" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <input id="funcionario-telefone" name="telefone" placeholder="Telefone (opcional)" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <label for="funcionario-ativo" class="flex items-center space-x-2 md:col-span-2">
+                                <input id="funcionario-ativo" name="ativo" type="checkbox" checked class="rounded border-slate-300">
+                                <span class="text-sm font-medium text-slate-700">Funcionário ativo</span>
+                            </label>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="submit" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">Salvar funcionário</button>
+                            <button id="cancelar-funcionario" type="button" class="hidden rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+                        </div>
+                    </form>
+                    <p id="funcionario-status-msg" class="text-sm text-slate-500" role="status"></p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b text-slate-500 text-sm">
+                                    <th class="py-3 px-4">Nome</th>
+                                    <th class="py-3 px-4">Cargo</th>
+                                    <th class="py-3 px-4">Contato</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="funcionarios-lista" class="divide-y text-slate-700">
+                                <tr><td colspan="5" class="py-4 px-4 text-slate-500">Faça login para carregar os funcionários.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -349,10 +383,46 @@
                     <h1 class="text-2xl font-bold text-slate-800">Registro de Presença e Ponto</h1>
                     <p class="text-slate-500 text-sm">Marcação de ponto diária da equipe na obra</p>
                 </header>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <button class="bg-emerald-600 text-white font-semibold px-6 py-3 rounded-lg shadow hover:bg-emerald-700">
-                        <i class="fa-solid fa-check mr-2"></i>Bater Ponto Agora
-                    </button>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                    <form id="presenca-form" class="hidden space-y-3 border-b border-slate-200 pb-5">
+                        <h2 class="text-lg font-bold text-slate-800">Registrar presença de hoje</h2>
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <label class="space-y-1 text-sm font-medium text-slate-700">
+                                <span>Funcionário</span>
+                                <select id="presenca-funcionario" name="funcionario" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                    <option value="">Selecione um funcionário</option>
+                                </select>
+                            </label>
+                            <label class="space-y-1 text-sm font-medium text-slate-700">
+                                <span>Obra (opcional)</span>
+                                <select id="presenca-obra" name="obra" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                    <option value="">Sem obra vinculada</option>
+                                </select>
+                            </label>
+                        </div>
+                        <button id="registrar-presenca" type="submit" class="rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white shadow hover:bg-emerald-700">
+                            <i class="fa-solid fa-check mr-2" aria-hidden="true"></i>Registrar presença agora
+                        </button>
+                    </form>
+                    <p id="presenca-status" class="text-sm text-slate-500" role="status">Faça login para registrar e consultar presenças.</p>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Presenças de hoje</h2>
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b text-slate-500 text-sm">
+                                        <th class="py-3 px-4">Funcionário</th>
+                                        <th class="py-3 px-4">Obra</th>
+                                        <th class="py-3 px-4">Data</th>
+                                        <th class="py-3 px-4">Horário do registro</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="presencas-lista" class="divide-y text-slate-700">
+                                    <tr><td colspan="4" class="py-4 px-4 text-slate-500">Faça login para carregar as presenças.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </section>
 

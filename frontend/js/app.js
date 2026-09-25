@@ -46,13 +46,26 @@ const materialStatus = document.getElementById('material-status');
 const obraForm = document.getElementById('obra-form');
 const obraFormTitulo = document.getElementById('obra-form-titulo');
 const cancelarObraButton = document.getElementById('cancelar-obra');
-const obraStatus = document.getElementById('obra-status');
+const obraStatusMsg = document.getElementById('obra-status-msg');
 const obrasLista = document.getElementById('obras-lista');
+const funcionarioForm = document.getElementById('funcionario-form');
+const funcionarioFormTitulo = document.getElementById('funcionario-form-titulo');
+const funcionarioStatus = document.getElementById('funcionario-status-msg');
+const funcionariosLista = document.getElementById('funcionarios-lista');
+const novoFuncionarioButton = document.getElementById('novo-funcionario');
+const cancelarFuncionarioButton = document.getElementById('cancelar-funcionario');
+const presencaForm = document.getElementById('presenca-form');
+const presencaFuncionarioSelect = document.getElementById('presenca-funcionario');
+const presencaObraSelect = document.getElementById('presenca-obra');
+const presencaStatus = document.getElementById('presenca-status');
+const presencasLista = document.getElementById('presencas-lista');
+const registrarPresencaButton = document.getElementById('registrar-presenca');
 
 let materiais = [];
 let orcamentoEmEdicao = null;
 let materialEmEdicao = null;
 let obraEmEdicao = null;
+let funcionarioEmEdicao = null;
 
 function formatarMoeda(valor) {
   return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -206,11 +219,110 @@ async function carregarObras() {
   }
 }
 
+function renderizarFuncionarios(funcionarios) {
+  if (!funcionariosLista) return;
+  funcionariosLista.innerHTML = funcionarios.length
+    ? funcionarios.map((funcionario) => `
+        <tr data-funcionario-id="${funcionario.id}">
+          <td class="py-3 px-4 font-semibold">${escaparHtml(funcionario.nome)}</td>
+          <td class="py-3 px-4">${escaparHtml(funcionario.cargo)}</td>
+          <td class="py-3 px-4 text-sm">${escaparHtml(funcionario.email || 'Sem e-mail')}<small class="block text-xs text-slate-500">${escaparHtml(funcionario.telefone || 'Sem telefone')}</small></td>
+          <td class="py-3 px-4"><span class="rounded px-2 py-1 text-xs ${funcionario.ativo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}">${funcionario.ativo ? 'Ativo' : 'Inativo'}</span></td>
+          <td class="py-3 px-4"><button type="button" data-funcionario-acao="editar" class="mr-2 text-sm font-semibold text-slate-700 hover:underline">Editar</button><button type="button" data-funcionario-acao="excluir" class="text-sm font-semibold text-red-700 hover:underline">Excluir</button></td>
+        </tr>`).join('')
+    : '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Nenhum funcionário cadastrado.</td></tr>';
+}
+
+async function carregarFuncionarios() {
+  if (!funcionariosLista || !getToken()) return;
+  funcionariosLista.innerHTML = '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Carregando funcionários...</td></tr>';
+  try {
+    const data = await get('/funcionarios/');
+    renderizarFuncionarios(data.results || data);
+  } catch (error) {
+    funcionariosLista.innerHTML = `<tr><td colspan="5" class="py-4 px-4 text-red-600">${escaparHtml(error.message || 'Não foi possível carregar os funcionários.')}</td></tr>`;
+  }
+}
+
+function formatarDataHora(dataHora) {
+  return new Date(dataHora).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+async function carregarPresencas() {
+  if (!presencasLista || !getToken()) return;
+  presencasLista.innerHTML = '<tr><td colspan="4" class="py-4 px-4 text-slate-500">Carregando presenças...</td></tr>';
+  try {
+    const [presencasData, funcionariosData, obrasData] = await Promise.all([
+      get('/presencas/'),
+      get('/funcionarios/'),
+      get('/obras/'),
+    ]);
+    const presencas = presencasData.results || presencasData;
+    const funcionarios = (funcionariosData.results || funcionariosData).filter((funcionario) => funcionario.ativo);
+    const obras = obrasData.results || obrasData;
+    const funcionariosComPresenca = new Set(presencas.map((presenca) => presenca.funcionario));
+
+    if (presencaFuncionarioSelect) {
+      presencaFuncionarioSelect.innerHTML = '<option value="">Selecione um funcionário</option>' + funcionarios.map((funcionario) => `
+        <option value="${funcionario.id}" ${funcionariosComPresenca.has(funcionario.id) ? 'disabled' : ''}>${escaparHtml(funcionario.nome)}${funcionariosComPresenca.has(funcionario.id) ? ' (presença registrada)' : ''}</option>`).join('');
+    }
+    if (presencaObraSelect) {
+      presencaObraSelect.innerHTML = '<option value="">Sem obra vinculada</option>' + obras.map((obra) => `
+        <option value="${obra.id}">${escaparHtml(obra.nome)}</option>`).join('');
+    }
+    if (registrarPresencaButton) registrarPresencaButton.disabled = !funcionarios.some((funcionario) => !funcionariosComPresenca.has(funcionario.id));
+
+    presencasLista.innerHTML = presencas.length
+      ? presencas.map((presenca) => `
+          <tr>
+            <td class="py-3 px-4"><span class="font-semibold">${escaparHtml(presenca.funcionario_nome)}</span><small class="block text-xs text-slate-500">${escaparHtml(presenca.funcionario_cargo)}</small></td>
+            <td class="py-3 px-4">${escaparHtml(presenca.obra_nome || 'Sem obra vinculada')}</td>
+            <td class="py-3 px-4">${formatarData(presenca.data)}</td>
+            <td class="py-3 px-4">${formatarDataHora(presenca.registrado_em)}</td>
+          </tr>`).join('')
+      : '<tr><td colspan="4" class="py-4 px-4 text-slate-500">Nenhuma presença registrada hoje.</td></tr>';
+    if (presencaStatus) {
+      presencaStatus.textContent = funcionarios.length
+        ? 'Selecione um funcionário ativo para registrar a presença de hoje.'
+        : 'Cadastre um funcionário ativo antes de registrar presença.';
+    }
+  } catch (error) {
+    presencasLista.innerHTML = `<tr><td colspan="4" class="py-4 px-4 text-red-600">${escaparHtml(error.message || 'Não foi possível carregar as presenças.')}</td></tr>`;
+    if (presencaStatus) presencaStatus.textContent = 'Não foi possível carregar os dados necessários para registrar presença.';
+  }
+}
+
+function limparFormularioFuncionario() {
+  funcionarioForm?.reset();
+  funcionarioEmEdicao = null;
+  funcionarioForm?.classList.add('hidden');
+  if (funcionarioFormTitulo) funcionarioFormTitulo.textContent = 'Novo funcionário';
+  if (funcionarioStatus) funcionarioStatus.textContent = '';
+  cancelarFuncionarioButton?.classList.add('hidden');
+}
+
+function preencherFormularioFuncionario(funcionario) {
+  funcionarioForm?.classList.remove('hidden');
+  funcionarioEmEdicao = funcionario.id;
+  document.getElementById('funcionario-nome').value = funcionario.nome;
+  document.getElementById('funcionario-cargo').value = funcionario.cargo;
+  document.getElementById('funcionario-email').value = funcionario.email || '';
+  document.getElementById('funcionario-telefone').value = funcionario.telefone || '';
+  document.getElementById('funcionario-ativo').checked = funcionario.ativo;
+  if (funcionarioFormTitulo) funcionarioFormTitulo.textContent = 'Editar funcionário';
+  cancelarFuncionarioButton?.classList.remove('hidden');
+  funcionarioForm?.scrollIntoView({ behavior: 'smooth' });
+}
+
 function limparFormularioObra() {
   obraForm?.reset();
   obraEmEdicao = null;
   if (obraFormTitulo) obraFormTitulo.textContent = 'Nova obra';
   cancelarObraButton?.classList.add('hidden');
+  if (obraStatusMsg) obraStatusMsg.textContent = '';
 }
 
 function preencherFormularioObra(obra) {
@@ -275,12 +387,22 @@ function atualizarEstadoDaSessao(usuario = null) {
   orcamentoForm?.classList.toggle('hidden', !autenticado);
   materialForm?.classList.toggle('hidden', !autenticado);
   obraForm?.classList.toggle('hidden', !autenticado);
+  novoFuncionarioButton?.classList.toggle('hidden', !autenticado);
+  presencaForm?.classList.toggle('hidden', !autenticado);
+  if (!autenticado) {
+    limparFormularioFuncionario();
+    if (funcionariosLista) funcionariosLista.innerHTML = '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Faça login para carregar os funcionários.</td></tr>';
+    if (presencasLista) presencasLista.innerHTML = '<tr><td colspan="4" class="py-4 px-4 text-slate-500">Faça login para carregar as presenças.</td></tr>';
+    if (presencaStatus) presencaStatus.textContent = 'Faça login para registrar e consultar presenças.';
+  }
 }
 
 async function carregarDadosAutenticados() {
   await carregarMateriais();
   await carregarObras();
   await carregarOrcamentos();
+  await carregarFuncionarios();
+  await carregarPresencas();
 }
 
 window.addEventListener('online', updateOnlineStatus);
@@ -481,23 +603,95 @@ obraForm?.addEventListener('submit', async (event) => {
   Object.keys(dados).forEach((campo) => {
     if (dados[campo] === '') delete dados[campo];
   });
-  obraStatus.textContent = 'Salvando...';
+  obraStatusMsg.textContent = 'Salvando...';
   try {
     if (obraEmEdicao) {
       await patch(`/obras/${obraEmEdicao}/`, dados);
-      obraStatus.textContent = 'Obra atualizada.';
+      obraStatusMsg.textContent = 'Obra atualizada.';
     } else {
       await post('/obras/', dados);
-      obraStatus.textContent = 'Obra cadastrada.';
+      obraStatusMsg.textContent = 'Obra cadastrada.';
     }
     limparFormularioObra();
     await carregarObras();
   } catch (error) {
-    obraStatus.textContent = error.message || 'Não foi possível salvar a obra.';
+    obraStatusMsg.textContent = error.message || 'Não foi possível salvar a obra.';
   }
 });
 
 cancelarObraButton?.addEventListener('click', limparFormularioObra);
+
+novoFuncionarioButton?.addEventListener('click', () => {
+  limparFormularioFuncionario();
+  funcionarioForm?.classList.remove('hidden');
+  funcionarioForm?.scrollIntoView({ behavior: 'smooth' });
+});
+
+cancelarFuncionarioButton?.addEventListener('click', limparFormularioFuncionario);
+
+presencaForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const funcionario = Number(presencaFuncionarioSelect?.value);
+  if (!funcionario) {
+    presencaStatus.textContent = 'Selecione um funcionário.';
+    return;
+  }
+  registrarPresencaButton.disabled = true;
+  presencaStatus.textContent = 'Registrando presença...';
+  const obraSelecionada = presencaObraSelect?.value;
+  try {
+    await post('/presencas/', {
+      funcionario,
+      obra: obraSelecionada ? Number(obraSelecionada) : null,
+    });
+    presencaForm.reset();
+    await carregarPresencas();
+    presencaStatus.textContent = 'Presença registrada com sucesso.';
+  } catch (error) {
+    presencaStatus.textContent = error.message || 'Não foi possível registrar a presença.';
+    registrarPresencaButton.disabled = false;
+  }
+});
+
+funcionarioForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const dados = Object.fromEntries(new FormData(funcionarioForm).entries());
+  dados.ativo = document.getElementById('funcionario-ativo').checked;
+  funcionarioStatus.textContent = 'Salvando...';
+  try {
+    let mensagem;
+    if (funcionarioEmEdicao) {
+      await patch(`/funcionarios/${funcionarioEmEdicao}/`, dados);
+      mensagem = 'Funcionário atualizado.';
+    } else {
+      await post('/funcionarios/', dados);
+      mensagem = 'Funcionário cadastrado.';
+    }
+    limparFormularioFuncionario();
+    funcionarioStatus.textContent = mensagem;
+    await carregarFuncionarios();
+  } catch (error) {
+    funcionarioStatus.textContent = error.message || 'Não foi possível salvar o funcionário.';
+  }
+});
+
+funcionariosLista?.addEventListener('click', async (event) => {
+  const botao = event.target.closest('[data-funcionario-acao]');
+  if (!botao) return;
+  const id = Number(botao.closest('[data-funcionario-id]')?.dataset.funcionarioId);
+  if (!id) return;
+  try {
+    if (botao.dataset.funcionarioAcao === 'editar') {
+      preencherFormularioFuncionario(await get(`/funcionarios/${id}/`));
+    } else if (botao.dataset.funcionarioAcao === 'excluir' && window.confirm('Excluir este funcionário?')) {
+      await remove(`/funcionarios/${id}/`);
+      if (funcionarioEmEdicao === id) limparFormularioFuncionario();
+      await carregarFuncionarios();
+    }
+  } catch (error) {
+    window.alert(error.message || 'Não foi possível concluir a ação para este funcionário.');
+  }
+});
 
 obrasLista?.addEventListener('click', async (event) => {
   const botao = event.target.closest('[data-obra-acao]');

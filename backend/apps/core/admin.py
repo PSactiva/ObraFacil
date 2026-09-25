@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Funcionario
+from .models import Funcionario, Presenca
 
 
 User = get_user_model()
@@ -41,3 +41,11 @@ class FuncionarioAdmin(admin.ModelAdmin):
 	@admin.action(description="Desativar funcionários selecionados")
 	def desativar_funcionarios(self, request, queryset):
 		queryset.update(ativo=False)
+
+
+@admin.register(Presenca)
+class PresencaAdmin(admin.ModelAdmin):
+	list_display = ("funcionario", "obra", "data", "registrado_em")
+	list_filter = ("data", "obra")
+	search_fields = ("funcionario__nome", "obra__nome")
+	readonly_fields = ("data", "registrado_em")

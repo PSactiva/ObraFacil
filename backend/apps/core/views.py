@@ -6,12 +6,16 @@ from django.core.validators import validate_email
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.encoding import force_bytes, force_str
+from django.utils import timezone
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import mixins, status, viewsets
+
+from .models import Funcionario, Presenca
+from .serializers import FuncionarioSerializer, PresencaSerializer
 
 
 @api_view(["GET"])
@@ -112,3 +116,18 @@ def register_user(request):
     user.set_password(password)
     user.save()
     return Response({"id": user.id, "username": user.username}, status=status.HTTP_201_CREATED)
+
+
+class FuncionarioViewSet(viewsets.ModelViewSet):
+    queryset = Funcionario.objects.all()
+    serializer_class = FuncionarioSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class PresencaViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = Presenca.objects.select_related("funcionario", "obra")
+    serializer_class = PresencaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return super().get_queryset().filter(data=timezone.localdate())
