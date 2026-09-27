@@ -6,10 +6,11 @@ from apps.obras.models import Obra
 
 
 @pytest.mark.django_db
-def test_listar_obras_publicamente(client):
+def test_listar_obras_exige_login(client, authenticated_client):
     Obra.objects.create(nome="Residência Jardins", cliente="Ana Costa")
 
-    response = client.get("/api/obras/")
+    assert client.get("/api/obras/").status_code == 401
+    response = authenticated_client.get("/api/obras/")
 
     assert response.status_code == 200
     assert response.json()["results"][0]["nome"] == "Residência Jardins"

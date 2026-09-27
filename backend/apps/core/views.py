@@ -14,11 +14,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import mixins, status, viewsets
 
+from .audit import contexto_auditoria
 from .models import Funcionario, Presenca
 from .serializers import FuncionarioSerializer, PresencaSerializer
 
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def health_check(request):
     return Response({"status": "ok", "app": "ObraFácil"})
 
@@ -77,7 +79,8 @@ def confirm_password_reset(request):
         return Response({"password": list(error.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
     user.set_password(password)
-    user.save(update_fields=["password"])
+    with contexto_auditoria(user, request):
+        user.save(update_fields=["password"])
     Token.objects.filter(user=user).delete()
     return Response({"detail": "Senha redefinida com sucesso."})
 
@@ -114,7 +117,8 @@ def register_user(request):
         return Response({"password": list(error.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
     user.set_password(password)
-    user.save()
+    with contexto_auditoria(user, request):
+        user.save()
     return Response({"id": user.id, "username": user.username}, status=status.HTTP_201_CREATED)
 
 

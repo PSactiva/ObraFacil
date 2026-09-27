@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -37,3 +38,29 @@ class Presenca(models.Model):
 
 	def __str__(self):
 		return f"{self.funcionario.nome} - {self.data}"
+
+
+class LogAlteracao(models.Model):
+	class Acao(models.TextChoices):
+		CRIACAO = "create", "Criação"
+		EDICAO = "update", "Edição"
+		EXCLUSAO = "delete", "Exclusão"
+
+	usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="logs_alteracao")
+	usuario_nome = models.CharField(max_length=150)
+	acao = models.CharField(max_length=10, choices=Acao.choices)
+	app_label = models.CharField(max_length=100)
+	modelo = models.CharField(max_length=100)
+	objeto_id = models.CharField(max_length=100)
+	objeto_repr = models.CharField(max_length=255)
+	detalhes = models.JSONField(default=dict)
+	ip_address = models.GenericIPAddressField(null=True, blank=True)
+	criado_em = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ["-criado_em"]
+		verbose_name = "Log de alteração"
+		verbose_name_plural = "Logs de alterações"
+
+	def __str__(self):
+		return f"{self.usuario_nome} — {self.get_acao_display()} {self.modelo} #{self.objeto_id}"

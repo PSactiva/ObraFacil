@@ -17,13 +17,16 @@ def test_health_check(client):
 
 
 @pytest.mark.django_db
-def test_calcular_area_permite_acesso_publico(client):
-    response = client.post(
+def test_calcular_area_requer_usuario_autenticado(client, authenticated_client):
+    payload = {"comprimento": 4, "largura": 3}
+    response_anonimo = client.post(
         "/api/calculos/area/",
-        {"comprimento": 4, "largura": 3},
+        payload,
         format="json",
     )
+    assert response_anonimo.status_code == 401
 
+    response = authenticated_client.post("/api/calculos/area/", payload, format="json")
     assert response.status_code == 200
     assert response.json() == {"area_m2": 12.0}
 

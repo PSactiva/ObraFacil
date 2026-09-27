@@ -57,6 +57,10 @@
                     <i class="fa-solid fa-clipboard-user w-5"></i>
                     <span>Presença</span>
                 </button>
+                <button onclick="switchTab('rdo')" id="btn-rdo" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-book w-5"></i>
+                    <span>Diário de Obra</span>
+                </button>
             </nav>
 
             <form id="login-form" class="m-4 space-y-3 border-t border-slate-700 pt-4">
@@ -123,9 +127,37 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h2 class="text-lg font-bold text-slate-800 mb-4">Progresso Geral</h2>
-                        <div class="h-48 bg-slate-50 border border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-400">
-                            [Gráfico de Desempenho / Estatísticas]
+                        <div class="mb-5 flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="text-lg font-bold text-slate-800">Progresso Geral</h2>
+                            <span id="dashboard-obras-total" class="text-sm text-slate-500" aria-live="polite">Consultando obras...</span>
+                        </div>
+                        <div class="mb-5 rounded-lg bg-slate-50 p-4">
+                            <div class="mb-2 flex items-center justify-between gap-3">
+                                <span class="text-sm font-medium text-slate-700">Obras concluídas</span>
+                                <strong id="dashboard-percentual" class="text-lg text-slate-900">0%</strong>
+                            </div>
+                            <div class="h-3 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-label="Percentual de obras concluídas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="dashboard-progresso">
+                                <div id="dashboard-barra-concluidas" class="h-full rounded-full bg-emerald-500 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            <p id="dashboard-mensagem" class="mt-2 text-xs text-slate-500" role="status">Carregando dados das obras...</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Obras por status">
+                            <div class="rounded-lg border border-slate-200 p-3">
+                                <p class="text-xs font-medium text-slate-500">Planejadas</p>
+                                <p id="dashboard-planejadas" class="mt-1 text-2xl font-bold text-slate-800">0</p>
+                            </div>
+                            <div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                                <p class="text-xs font-medium text-amber-800">Em andamento</p>
+                                <p id="dashboard-em-andamento" class="mt-1 text-2xl font-bold text-amber-900">0</p>
+                            </div>
+                            <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                                <p class="text-xs font-medium text-emerald-800">Concluídas</p>
+                                <p id="dashboard-concluidas" class="mt-1 text-2xl font-bold text-emerald-900">0</p>
+                            </div>
+                            <div class="rounded-lg border border-red-200 bg-red-50 p-3">
+                                <p class="text-xs font-medium text-red-800">Pausadas</p>
+                                <p id="dashboard-pausadas" class="mt-1 text-2xl font-bold text-red-900">0</p>
+                            </div>
                         </div>
                     </div>
 
@@ -422,6 +454,34 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-rdo" class="tab-content hidden space-y-6">
+                <header class="flex flex-wrap items-end justify-between gap-3 border-b pb-4">
+                    <div><h1 class="text-2xl font-bold text-slate-800">Diário de Obra (RDO)</h1><p class="text-sm text-slate-500">Registre o andamento, clima, equipe e imagens de cada dia.</p></div>
+                    <button id="novo-rdo" type="button" class="rounded-lg bg-amber-500 px-4 py-2 font-semibold text-slate-900 hover:bg-amber-400">+ Novo diário</button>
+                </header>
+                <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+                    <form id="rdo-form" class="hidden space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <h2 class="text-lg font-bold text-slate-800">Registrar dia de obra</h2>
+                        <label class="block space-y-1 text-sm font-medium text-slate-700"><span>Obra</span><select name="obra" id="rdo-obra" required class="w-full rounded-lg border border-slate-300 px-3 py-2"><option value="">Selecione uma obra</option></select></label>
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <label class="space-y-1 text-sm font-medium text-slate-700"><span>Data</span><input name="data" id="rdo-data" type="date" required class="w-full rounded-lg border border-slate-300 px-3 py-2"></label>
+                            <label class="space-y-1 text-sm font-medium text-slate-700"><span>Condição do tempo</span><select name="clima" required class="w-full rounded-lg border border-slate-300 px-3 py-2"><option value="ensolarado">Ensolarado</option><option value="parcial">Parcialmente nublado</option><option value="nublado">Nublado</option><option value="chuvoso">Chuvoso</option></select></label>
+                            <label class="space-y-1 text-sm font-medium text-slate-700"><span>Temperatura (°C, opcional)</span><input name="temperatura" type="number" step="0.1" class="w-full rounded-lg border border-slate-300 px-3 py-2"></label>
+                            <label class="space-y-1 text-sm font-medium text-slate-700"><span>Efetivo presente</span><input name="efetivo" type="number" min="0" required value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2"></label>
+                        </div>
+                        <label class="block space-y-1 text-sm font-medium text-slate-700"><span>Atividades executadas</span><textarea name="atividades" rows="3" placeholder="Serviços realizados no dia" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea></label>
+                        <label class="block space-y-1 text-sm font-medium text-slate-700"><span>Ocorrências</span><textarea name="ocorrencias" rows="3" placeholder="Imprevistos, paralisações ou observações" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea></label>
+                        <label class="block space-y-1 text-sm font-medium text-slate-700"><span>Imagens (até 10 por envio)</span><input name="imagens" type="file" accept="image/*" multiple class="w-full rounded-lg border border-slate-300 px-3 py-2"><small class="text-slate-500">Fotos adicionadas ao diário existente também serão anexadas.</small></label>
+                        <div class="flex gap-2"><button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800">Salvar diário</button><button id="cancelar-rdo" type="button" class="rounded-lg border border-slate-300 px-4 py-2">Cancelar</button></div>
+                        <p id="rdo-status" class="text-sm text-slate-500" role="status"></p>
+                    </form>
+                    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
+                        <div class="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 class="text-lg font-bold text-slate-800">Registros recentes</h2><label class="text-sm text-slate-600">Filtrar por obra <select id="rdo-filtro-obra" class="ml-2 rounded-lg border border-slate-300 px-3 py-2"><option value="">Todas as obras</option></select></label></div>
+                        <div id="rdo-lista" class="grid grid-cols-1 gap-4 lg:grid-cols-2"><p class="text-slate-500">Faça login para carregar os diários.</p></div>
                     </div>
                 </div>
             </section>

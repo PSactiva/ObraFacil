@@ -14,6 +14,8 @@ import {
   post,
   register,
   remove,
+  postForm,
+  patchForm,
 } from './api.js';
 
 const formArea = document.getElementById('form-area');
@@ -48,6 +50,17 @@ const obraFormTitulo = document.getElementById('obra-form-titulo');
 const cancelarObraButton = document.getElementById('cancelar-obra');
 const obraStatusMsg = document.getElementById('obra-status-msg');
 const obrasLista = document.getElementById('obras-lista');
+const dashboardObrasTotal = document.getElementById('dashboard-obras-total');
+const dashboardPercentual = document.getElementById('dashboard-percentual');
+const dashboardProgresso = document.getElementById('dashboard-progresso');
+const dashboardBarraConcluidas = document.getElementById('dashboard-barra-concluidas');
+const dashboardMensagem = document.getElementById('dashboard-mensagem');
+const dashboardContagens = {
+  planejada: document.getElementById('dashboard-planejadas'),
+  em_andamento: document.getElementById('dashboard-em-andamento'),
+  concluida: document.getElementById('dashboard-concluidas'),
+  pausada: document.getElementById('dashboard-pausadas'),
+};
 const funcionarioForm = document.getElementById('funcionario-form');
 const funcionarioFormTitulo = document.getElementById('funcionario-form-titulo');
 const funcionarioStatus = document.getElementById('funcionario-status-msg');
@@ -60,15 +73,37 @@ const presencaObraSelect = document.getElementById('presenca-obra');
 const presencaStatus = document.getElementById('presenca-status');
 const presencasLista = document.getElementById('presencas-lista');
 const registrarPresencaButton = document.getElementById('registrar-presenca');
+const rdoForm = document.getElementById('rdo-form');
+const rdoLista = document.getElementById('rdo-lista');
+const rdoObraSelect = document.getElementById('rdo-obra');
+const rdoFiltroObra = document.getElementById('rdo-filtro-obra');
+const rdoStatus = document.getElementById('rdo-status');
+const rdoNovoButton = document.getElementById('novo-rdo');
+const cancelarRdoButton = document.getElementById('cancelar-rdo');
 
 let materiais = [];
 let orcamentoEmEdicao = null;
 let materialEmEdicao = null;
 let obraEmEdicao = null;
 let funcionarioEmEdicao = null;
+let rdos = [];
+let rdoEmEdicao = null;
 
 function formatarMoeda(valor) {
   return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+async function buscarTodos(endpoint) {
+  const itens = [];
+  let pagina = 1;
+  let data;
+  do {
+    const separador = endpoint.includes('?') ? '&' : '?';
+    data = await get(`${endpoint}${separador}page=${pagina}`);
+    itens.push(...(data.results || data));
+    pagina += 1;
+  } while (data.next);
+  return itens;
 }
 
 function escaparHtml(valor) {
@@ -210,12 +245,47 @@ function renderizarObras(obras) {
     : '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Nenhuma obra cadastrada.</td></tr>';
 }
 
+function renderizarProgresso(obras) {
+  if (!dashboardObrasTotal) return;
+  if (!Array.isArray(obras)) {
+    dashboardObrasTotal.textContent = 'Dados indisponíveis';
+    if (dashboardMensagem) dashboardMensagem.textContent = 'Não foi possível carregar o progresso das obras.';
+    return;
+  }
+
+  const contagens = { planejada: 0, em_andamento: 0, concluida: 0, pausada: 0 };
+  obras.forEach((obra) => {
+    if (Object.hasOwn(contagens, obra.status)) contagens[obra.status] += 1;
+  });
+  const total = obras.length;
+  const percentual = total ? Math.round((contagens.concluida / total) * 100) : 0;
+
+  dashboardObrasTotal.textContent = `${total} ${total === 1 ? 'obra cadastrada' : 'obras cadastradas'}`;
+  if (dashboardPercentual) dashboardPercentual.textContent = `${percentual}%`;
+  if (dashboardProgresso) {
+    dashboardProgresso.setAttribute('aria-valuenow', String(percentual));
+    dashboardProgresso.setAttribute('aria-valuetext', `${percentual}% das obras concluídas`);
+  }
+  if (dashboardBarraConcluidas) dashboardBarraConcluidas.style.width = `${percentual}%`;
+  Object.entries(contagens).forEach(([status, quantidade]) => {
+    const elemento = dashboardContagens[status];
+    if (elemento) elemento.textContent = String(quantidade);
+  });
+  if (dashboardMensagem) {
+    dashboardMensagem.textContent = total
+      ? `${contagens.concluida} de ${total} ${total === 1 ? 'obra está concluída.' : 'obras estão concluídas.'}`
+      : 'Cadastre uma obra para acompanhar o progresso por aqui.';
+  }
+}
+
 async function carregarObras() {
   try {
-    const data = await get('/obras/');
-    renderizarObras(data.results || data);
+    const obras = await buscarTodos('/obras/');
+    renderizarObras(obras);
+    renderizarProgresso(obras);
   } catch {
     if (obrasLista) obrasLista.innerHTML = '<tr><td colspan="5" class="py-4 px-4 text-red-600">Não foi possível carregar as obras.</td></tr>';
+    renderizarProgresso(null);
   }
 }
 
@@ -293,6 +363,67 @@ async function carregarPresencas() {
     presencasLista.innerHTML = `<tr><td colspan="4" class="py-4 px-4 text-red-600">${escaparHtml(error.message || 'Não foi possível carregar as presenças.')}</td></tr>`;
     if (presencaStatus) presencaStatus.textContent = 'Não foi possível carregar os dados necessários para registrar presença.';
   }
+}
+
+function formatarFotosRdo(fotos = []) {
+  return fotos.length ? `<div class="mt-3 grid grid-cols-3 gap-2">${fotos.map((foto) => `<a href="${escaparHtml(foto.imagem)}" target="_blank" rel="noopener" class="block"><img src="${escaparHtml(foto.imagem)}" alt="${escaparHtml(foto.legenda || 'Foto do diário de obra')}" class="h-24 w-full rounded-lg object-cover"></a>`).join('')}</div>` : '';
+}
+
+function renderizarRdos() {
+  if (!rdoLista) return;
+  const obraFiltro = rdoFiltroObra?.value;
+  const filtrados = obraFiltro ? rdos.filter((rdo) => String(rdo.obra) === obraFiltro) : rdos;
+  rdoLista.innerHTML = filtrados.length ? filtrados.map((rdo) => `
+    <article class="rounded-xl border border-slate-200 p-4" data-rdo-id="${rdo.id}">
+      <div class="flex items-start justify-between gap-3"><div><h3 class="font-bold text-slate-800">${escaparHtml(rdo.obra_nome)}</h3><p class="text-sm text-slate-500">${formatarData(rdo.data)} · ${escaparHtml(rdo.clima_display)}${rdo.temperatura ? ` · ${escaparHtml(rdo.temperatura)}°C` : ''}</p></div><span class="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900">${rdo.efetivo} pessoas</span></div>
+      ${rdo.atividades ? `<p class="mt-3 text-sm text-slate-700"><strong>Atividades:</strong> ${escaparHtml(rdo.atividades)}</p>` : ''}
+      ${rdo.ocorrencias ? `<p class="mt-2 text-sm text-slate-700"><strong>Ocorrências:</strong> ${escaparHtml(rdo.ocorrencias)}</p>` : ''}
+      ${formatarFotosRdo(rdo.fotos)}
+      ${getToken() ? `<div class="mt-3 flex gap-2"><button type="button" data-rdo-acao="editar" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold">Editar</button><button type="button" data-rdo-acao="excluir" class="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Excluir</button></div>` : ''}
+    </article>`).join('') : '<p class="text-slate-500">Nenhum diário encontrado para este filtro.</p>';
+}
+
+async function carregarRdos() {
+  if (!rdoLista || !getToken()) return;
+  rdoLista.innerHTML = '<p class="text-slate-500">Carregando diários...</p>';
+  try {
+    const [diariosData, obrasData] = await Promise.all([get('/rdo/'), get('/obras/')]);
+    rdos = diariosData.results || diariosData;
+    const obras = obrasData.results || obrasData;
+    const options = obras.map((obra) => `<option value="${obra.id}">${escaparHtml(obra.nome)}</option>`).join('');
+    if (rdoObraSelect) rdoObraSelect.innerHTML = '<option value="">Selecione uma obra</option>' + options;
+    if (rdoFiltroObra) {
+      const filtroAtual = rdoFiltroObra.value;
+      rdoFiltroObra.innerHTML = '<option value="">Todas as obras</option>' + options;
+      rdoFiltroObra.value = filtroAtual;
+    }
+    renderizarRdos();
+  } catch (error) {
+    rdoLista.innerHTML = `<p class="text-red-600">${escaparHtml(error.message || 'Não foi possível carregar os diários.')}</p>`;
+  }
+}
+
+function limparFormularioRdo() {
+  rdoForm?.reset();
+  rdoEmEdicao = null;
+  const hoje = new Date();
+  const localHoje = new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const dataInput = document.getElementById('rdo-data');
+  if (dataInput) dataInput.value = localHoje;
+  if (rdoStatus) rdoStatus.textContent = '';
+}
+
+function editarRdo(rdo) {
+  rdoEmEdicao = rdo.id;
+  rdoForm.classList.remove('hidden');
+  rdoForm.elements.obra.value = rdo.obra;
+  rdoForm.elements.data.value = rdo.data;
+  rdoForm.elements.clima.value = rdo.clima;
+  rdoForm.elements.temperatura.value = rdo.temperatura || '';
+  rdoForm.elements.efetivo.value = rdo.efetivo;
+  rdoForm.elements.atividades.value = rdo.atividades || '';
+  rdoForm.elements.ocorrencias.value = rdo.ocorrencias || '';
+  rdoForm.scrollIntoView({ behavior: 'smooth' });
 }
 
 function limparFormularioFuncionario() {
@@ -389,6 +520,11 @@ function atualizarEstadoDaSessao(usuario = null) {
   obraForm?.classList.toggle('hidden', !autenticado);
   novoFuncionarioButton?.classList.toggle('hidden', !autenticado);
   presencaForm?.classList.toggle('hidden', !autenticado);
+  rdoNovoButton?.classList.toggle('hidden', !autenticado);
+  if (!autenticado) {
+    rdoForm?.classList.add('hidden');
+    if (rdoLista) rdoLista.innerHTML = '<p class="text-slate-500">Faça login para carregar os diários.</p>';
+  }
   if (!autenticado) {
     limparFormularioFuncionario();
     if (funcionariosLista) funcionariosLista.innerHTML = '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Faça login para carregar os funcionários.</td></tr>';
@@ -403,6 +539,7 @@ async function carregarDadosAutenticados() {
   await carregarOrcamentos();
   await carregarFuncionarios();
   await carregarPresencas();
+  await carregarRdos();
 }
 
 window.addEventListener('online', updateOnlineStatus);
@@ -572,6 +709,50 @@ iniciarAutenticacao();
 
 carregarMateriais();
 carregarObras();
+rdoForm?.classList.add('hidden');
+rdoNovoButton?.addEventListener('click', () => {
+  limparFormularioRdo();
+  rdoForm?.classList.remove('hidden');
+  rdoForm?.scrollIntoView({ behavior: 'smooth' });
+});
+cancelarRdoButton?.addEventListener('click', () => {
+  limparFormularioRdo();
+  rdoForm?.classList.add('hidden');
+});
+rdoFiltroObra?.addEventListener('change', renderizarRdos);
+rdoForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formData = new FormData(rdoForm);
+  const dados = new FormData();
+  ['obra', 'data', 'clima', 'temperatura', 'efetivo', 'atividades', 'ocorrencias'].forEach((campo) => {
+    const valor = formData.get(campo);
+    if (valor !== null && valor !== '') dados.append(campo, valor);
+  });
+  [...(formData.getAll('imagens') || [])].filter((arquivo) => arquivo instanceof File && arquivo.size > 0).slice(0, 10).forEach((arquivo) => dados.append('imagens', arquivo));
+  rdoStatus.textContent = 'Salvando diário...';
+  try {
+    if (rdoEmEdicao) await patchForm(`/rdo/${rdoEmEdicao}/`, dados);
+    else await postForm('/rdo/', dados);
+    const estavaEditando = Boolean(rdoEmEdicao);
+    limparFormularioRdo();
+    rdoStatus.textContent = estavaEditando ? 'Diário atualizado.' : 'Diário salvo.';
+    await carregarRdos();
+  } catch (error) {
+    rdoStatus.textContent = error.message || 'Não foi possível salvar o diário.';
+  }
+});
+rdoLista?.addEventListener('click', async (event) => {
+  const botao = event.target.closest('[data-rdo-acao]');
+  if (!botao) return;
+  const id = Number(botao.closest('[data-rdo-id]')?.dataset.rdoId);
+  const rdo = rdos.find((item) => item.id === id);
+  if (!rdo) return;
+  if (botao.dataset.rdoAcao === 'editar') editarRdo(rdo);
+  if (botao.dataset.rdoAcao === 'excluir' && window.confirm(`Excluir o diário de ${formatarData(rdo.data)}?`)) {
+    try { await remove(`/rdo/${id}/`); await carregarRdos(); }
+    catch (error) { window.alert(error.message || 'Não foi possível excluir o diário.'); }
+  }
+});
 adicionarItemButton?.addEventListener('click', criarLinhaDeItem);
 buscaMaterial?.addEventListener('input', () => renderizarMateriais(buscaMaterial.value));
 

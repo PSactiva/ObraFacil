@@ -5,6 +5,7 @@ import dj_database_url
 from .base import *  # noqa: F403
 
 DEBUG = False
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 DATABASES = {
     "default": dj_database_url.config(

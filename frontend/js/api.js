@@ -12,7 +12,8 @@ export function clearToken() {
 
 async function request(endpoint, options = {}) {
   const headers = new Headers(options.headers || {});
-  headers.set('Content-Type', 'application/json');
+  const isFormData = options.body instanceof FormData;
+  if (!isFormData) headers.set('Content-Type', 'application/json');
   const token = getToken();
   if (token) headers.set('Authorization', `Token ${token}`);
 
@@ -74,6 +75,14 @@ export async function post(endpoint, data) {
     method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+export async function postForm(endpoint, data) {
+  return request(endpoint, { method: 'POST', body: data });
+}
+
+export async function patchForm(endpoint, data) {
+  return request(endpoint, { method: 'PATCH', body: data });
 }
 
 export async function patch(endpoint, data) {

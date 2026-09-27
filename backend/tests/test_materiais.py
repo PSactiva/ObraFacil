@@ -23,21 +23,22 @@ class TestMaterialList:
     """Testes para listagem de materiais"""
 
     @pytest.mark.django_db
-    def test_list_materiais_vazio(self, client):
-        """Deve retornar lista vazia quando não há materiais"""
-        response = client.get("/api/materiais/")
+    def test_list_materiais_vazio_exige_login(self, client, authenticated_client):
+        """A listagem deve exigir login e retornar vazia para usuário autenticado."""
+        assert client.get("/api/materiais/").status_code == 401
+        response = authenticated_client.get("/api/materiais/")
         assert response.status_code == 200
         data = response.json()
         assert data["count"] == 0
         assert data["results"] == []
 
     @pytest.mark.django_db
-    def test_list_materiais_com_items(self, client, material_factory):
+    def test_list_materiais_com_items(self, authenticated_client, material_factory):
         """Deve retornar lista de materiais ativos"""
         material_factory(nome="Cimento", preco_unitario=50.00)
         material_factory(nome="Areia", preco_unitario=30.00)
 
-        response = client.get("/api/materiais/")
+        response = authenticated_client.get("/api/materiais/")
         assert response.status_code == 200
         data = response.json()
         assert data["count"] == 2
@@ -46,12 +47,12 @@ class TestMaterialList:
         assert results[1]["nome"] == "Cimento"
 
     @pytest.mark.django_db
-    def test_list_materiais_apenas_ativos(self, client, material_factory):
+    def test_list_materiais_apenas_ativos(self, authenticated_client, material_factory):
         """Deve retornar apenas materiais ativos (ativo=True)"""
         material_factory(nome="Cimento", ativo=True)
         material_factory(nome="Descontinuado", ativo=False)
 
-        response = client.get("/api/materiais/")
+        response = authenticated_client.get("/api/materiais/")
         assert response.status_code == 200
         data = response.json()
         assert data["count"] == 1
@@ -108,26 +109,26 @@ class TestMaterialRetrieve:
     """Testes para obter um material específico"""
 
     @pytest.mark.django_db
-    def test_retrieve_material_existente(self, client, material_factory):
+    def test_retrieve_material_existente(self, authenticated_client, material_factory):
         """Deve retornar um material específico por ID"""
         material = material_factory(nome="Telha")
-        response = client.get(f"/api/materiais/{material.id}/")
+        response = authenticated_client.get(f"/api/materiais/{material.id}/")
         assert response.status_code == 200
         data = response.json()
         assert data["nome"] == "Telha"
         assert data["id"] == material.id
 
     @pytest.mark.django_db
-    def test_retrieve_material_nao_existe(self, client):
+    def test_retrieve_material_nao_existe(self, authenticated_client):
         """Deve retornar 404 para material inexistente"""
-        response = client.get("/api/materiais/999/")
+        response = authenticated_client.get("/api/materiais/999/")
         assert response.status_code == 404
 
     @pytest.mark.django_db
-    def test_retrieve_material_inativo(self, client, material_factory):
+    def test_retrieve_material_inativo(self, authenticated_client, material_factory):
         """Deve retornar 404 para material inativo"""
         material = material_factory(nome="Descontinuado", ativo=False)
-        response = client.get(f"/api/materiais/{material.id}/")
+        response = authenticated_client.get(f"/api/materiais/{material.id}/")
         assert response.status_code == 404
 
 
