@@ -10,6 +10,11 @@ def user():
 
 
 @pytest.fixture
+def staff_user():
+    return User.objects.create_superuser(username="adminuser", password="adminpass123")
+
+
+@pytest.fixture
 def authenticated_client(user):
     """Cria um cliente autenticado"""
     client = APIClient()

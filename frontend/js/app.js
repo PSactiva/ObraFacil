@@ -4,12 +4,18 @@ import {
   calcularPiso,
   estimarCusto,
   getToken,
+  getCurrentUser,
   get,
   login,
+  logout,
+  requestPasswordReset,
+  confirmPasswordReset,
   patch,
   post,
   register,
   remove,
+  postForm,
+  patchForm,
 } from './api.js';
 
 const formArea = document.getElementById('form-area');
@@ -19,6 +25,13 @@ const loginForm = document.getElementById('login-form');
 const loginStatus = document.getElementById('login-status');
 const registerForm = document.getElementById('register-form');
 const registerStatus = document.getElementById('register-status');
+const passwordResetRequestForm = document.getElementById('password-reset-request-form');
+const passwordResetRequestStatus = document.getElementById('password-reset-request-status');
+const passwordResetConfirmForm = document.getElementById('password-reset-confirm-form');
+const passwordResetConfirmStatus = document.getElementById('password-reset-confirm-status');
+const sessionPanel = document.getElementById('session-panel');
+const sessionUsername = document.getElementById('session-username');
+const logoutButton = document.getElementById('logout-button');
 const orcamentoForm = document.getElementById('orcamento-form');
 const orcamentosLista = document.getElementById('orcamentos-lista');
 const itensContainer = document.getElementById('orcamento-itens');
@@ -35,16 +48,62 @@ const materialStatus = document.getElementById('material-status');
 const obraForm = document.getElementById('obra-form');
 const obraFormTitulo = document.getElementById('obra-form-titulo');
 const cancelarObraButton = document.getElementById('cancelar-obra');
-const obraStatus = document.getElementById('obra-status');
+const obraStatusMsg = document.getElementById('obra-status-msg');
 const obrasLista = document.getElementById('obras-lista');
+const dashboardObrasTotal = document.getElementById('dashboard-obras-total');
+const dashboardPercentual = document.getElementById('dashboard-percentual');
+const dashboardProgresso = document.getElementById('dashboard-progresso');
+const dashboardBarraConcluidas = document.getElementById('dashboard-barra-concluidas');
+const dashboardMensagem = document.getElementById('dashboard-mensagem');
+const dashboardContagens = {
+  planejada: document.getElementById('dashboard-planejadas'),
+  em_andamento: document.getElementById('dashboard-em-andamento'),
+  concluida: document.getElementById('dashboard-concluidas'),
+  pausada: document.getElementById('dashboard-pausadas'),
+};
+const funcionarioForm = document.getElementById('funcionario-form');
+const funcionarioFormTitulo = document.getElementById('funcionario-form-titulo');
+const funcionarioStatus = document.getElementById('funcionario-status-msg');
+const funcionariosLista = document.getElementById('funcionarios-lista');
+const novoFuncionarioButton = document.getElementById('novo-funcionario');
+const cancelarFuncionarioButton = document.getElementById('cancelar-funcionario');
+const presencaForm = document.getElementById('presenca-form');
+const presencaFuncionarioSelect = document.getElementById('presenca-funcionario');
+const presencaObraSelect = document.getElementById('presenca-obra');
+const presencaStatus = document.getElementById('presenca-status');
+const presencasLista = document.getElementById('presencas-lista');
+const registrarPresencaButton = document.getElementById('registrar-presenca');
+const rdoForm = document.getElementById('rdo-form');
+const rdoLista = document.getElementById('rdo-lista');
+const rdoObraSelect = document.getElementById('rdo-obra');
+const rdoFiltroObra = document.getElementById('rdo-filtro-obra');
+const rdoStatus = document.getElementById('rdo-status');
+const rdoNovoButton = document.getElementById('novo-rdo');
+const cancelarRdoButton = document.getElementById('cancelar-rdo');
 
 let materiais = [];
 let orcamentoEmEdicao = null;
 let materialEmEdicao = null;
 let obraEmEdicao = null;
+let funcionarioEmEdicao = null;
+let rdos = [];
+let rdoEmEdicao = null;
 
 function formatarMoeda(valor) {
   return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+async function buscarTodos(endpoint) {
+  const itens = [];
+  let pagina = 1;
+  let data;
+  do {
+    const separador = endpoint.includes('?') ? '&' : '?';
+    data = await get(`${endpoint}${separador}page=${pagina}`);
+    itens.push(...(data.results || data));
+    pagina += 1;
+  } while (data.next);
+  return itens;
 }
 
 function escaparHtml(valor) {
@@ -186,13 +245,207 @@ function renderizarObras(obras) {
     : '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Nenhuma obra cadastrada.</td></tr>';
 }
 
+function renderizarProgresso(obras) {
+  if (!dashboardObrasTotal) return;
+  if (!Array.isArray(obras)) {
+    dashboardObrasTotal.textContent = 'Dados indisponíveis';
+    if (dashboardMensagem) dashboardMensagem.textContent = 'Não foi possível carregar o progresso das obras.';
+    return;
+  }
+
+  const contagens = { planejada: 0, em_andamento: 0, concluida: 0, pausada: 0 };
+  obras.forEach((obra) => {
+    if (Object.hasOwn(contagens, obra.status)) contagens[obra.status] += 1;
+  });
+  const total = obras.length;
+  const percentual = total ? Math.round((contagens.concluida / total) * 100) : 0;
+
+  dashboardObrasTotal.textContent = `${total} ${total === 1 ? 'obra cadastrada' : 'obras cadastradas'}`;
+  if (dashboardPercentual) dashboardPercentual.textContent = `${percentual}%`;
+  if (dashboardProgresso) {
+    dashboardProgresso.setAttribute('aria-valuenow', String(percentual));
+    dashboardProgresso.setAttribute('aria-valuetext', `${percentual}% das obras concluídas`);
+  }
+  if (dashboardBarraConcluidas) dashboardBarraConcluidas.style.width = `${percentual}%`;
+  Object.entries(contagens).forEach(([status, quantidade]) => {
+    const elemento = dashboardContagens[status];
+    if (elemento) elemento.textContent = String(quantidade);
+  });
+  if (dashboardMensagem) {
+    dashboardMensagem.textContent = total
+      ? `${contagens.concluida} de ${total} ${total === 1 ? 'obra está concluída.' : 'obras estão concluídas.'}`
+      : 'Cadastre uma obra para acompanhar o progresso por aqui.';
+  }
+}
+
 async function carregarObras() {
   try {
-    const data = await get('/obras/');
-    renderizarObras(data.results || data);
+    const obras = await buscarTodos('/obras/');
+    renderizarObras(obras);
+    renderizarProgresso(obras);
   } catch {
     if (obrasLista) obrasLista.innerHTML = '<tr><td colspan="5" class="py-4 px-4 text-red-600">Não foi possível carregar as obras.</td></tr>';
+    renderizarProgresso(null);
   }
+}
+
+function renderizarFuncionarios(funcionarios) {
+  if (!funcionariosLista) return;
+  funcionariosLista.innerHTML = funcionarios.length
+    ? funcionarios.map((funcionario) => `
+        <tr data-funcionario-id="${funcionario.id}">
+          <td class="py-3 px-4 font-semibold">${escaparHtml(funcionario.nome)}</td>
+          <td class="py-3 px-4">${escaparHtml(funcionario.cargo)}</td>
+          <td class="py-3 px-4 text-sm">${escaparHtml(funcionario.email || 'Sem e-mail')}<small class="block text-xs text-slate-500">${escaparHtml(funcionario.telefone || 'Sem telefone')}</small></td>
+          <td class="py-3 px-4"><span class="rounded px-2 py-1 text-xs ${funcionario.ativo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}">${funcionario.ativo ? 'Ativo' : 'Inativo'}</span></td>
+          <td class="py-3 px-4"><button type="button" data-funcionario-acao="editar" class="mr-2 text-sm font-semibold text-slate-700 hover:underline">Editar</button><button type="button" data-funcionario-acao="excluir" class="text-sm font-semibold text-red-700 hover:underline">Excluir</button></td>
+        </tr>`).join('')
+    : '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Nenhum funcionário cadastrado.</td></tr>';
+}
+
+async function carregarFuncionarios() {
+  if (!funcionariosLista || !getToken()) return;
+  funcionariosLista.innerHTML = '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Carregando funcionários...</td></tr>';
+  try {
+    const data = await get('/funcionarios/');
+    renderizarFuncionarios(data.results || data);
+  } catch (error) {
+    funcionariosLista.innerHTML = `<tr><td colspan="5" class="py-4 px-4 text-red-600">${escaparHtml(error.message || 'Não foi possível carregar os funcionários.')}</td></tr>`;
+  }
+}
+
+function formatarDataHora(dataHora) {
+  return new Date(dataHora).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+async function carregarPresencas() {
+  if (!presencasLista || !getToken()) return;
+  presencasLista.innerHTML = '<tr><td colspan="4" class="py-4 px-4 text-slate-500">Carregando presenças...</td></tr>';
+  try {
+    const [presencasData, funcionariosData, obrasData] = await Promise.all([
+      get('/presencas/'),
+      get('/funcionarios/'),
+      get('/obras/'),
+    ]);
+    const presencas = presencasData.results || presencasData;
+    const funcionarios = (funcionariosData.results || funcionariosData).filter((funcionario) => funcionario.ativo);
+    const obras = obrasData.results || obrasData;
+    const funcionariosComPresenca = new Set(presencas.map((presenca) => presenca.funcionario));
+
+    if (presencaFuncionarioSelect) {
+      presencaFuncionarioSelect.innerHTML = '<option value="">Selecione um funcionário</option>' + funcionarios.map((funcionario) => `
+        <option value="${funcionario.id}" ${funcionariosComPresenca.has(funcionario.id) ? 'disabled' : ''}>${escaparHtml(funcionario.nome)}${funcionariosComPresenca.has(funcionario.id) ? ' (presença registrada)' : ''}</option>`).join('');
+    }
+    if (presencaObraSelect) {
+      presencaObraSelect.innerHTML = '<option value="">Sem obra vinculada</option>' + obras.map((obra) => `
+        <option value="${obra.id}">${escaparHtml(obra.nome)}</option>`).join('');
+    }
+    if (registrarPresencaButton) registrarPresencaButton.disabled = !funcionarios.some((funcionario) => !funcionariosComPresenca.has(funcionario.id));
+
+    presencasLista.innerHTML = presencas.length
+      ? presencas.map((presenca) => `
+          <tr>
+            <td class="py-3 px-4"><span class="font-semibold">${escaparHtml(presenca.funcionario_nome)}</span><small class="block text-xs text-slate-500">${escaparHtml(presenca.funcionario_cargo)}</small></td>
+            <td class="py-3 px-4">${escaparHtml(presenca.obra_nome || 'Sem obra vinculada')}</td>
+            <td class="py-3 px-4">${formatarData(presenca.data)}</td>
+            <td class="py-3 px-4">${formatarDataHora(presenca.registrado_em)}</td>
+          </tr>`).join('')
+      : '<tr><td colspan="4" class="py-4 px-4 text-slate-500">Nenhuma presença registrada hoje.</td></tr>';
+    if (presencaStatus) {
+      presencaStatus.textContent = funcionarios.length
+        ? 'Selecione um funcionário ativo para registrar a presença de hoje.'
+        : 'Cadastre um funcionário ativo antes de registrar presença.';
+    }
+  } catch (error) {
+    presencasLista.innerHTML = `<tr><td colspan="4" class="py-4 px-4 text-red-600">${escaparHtml(error.message || 'Não foi possível carregar as presenças.')}</td></tr>`;
+    if (presencaStatus) presencaStatus.textContent = 'Não foi possível carregar os dados necessários para registrar presença.';
+  }
+}
+
+function formatarFotosRdo(fotos = []) {
+  return fotos.length ? `<div class="mt-3 grid grid-cols-3 gap-2">${fotos.map((foto) => `<a href="${escaparHtml(foto.imagem)}" target="_blank" rel="noopener" class="block"><img src="${escaparHtml(foto.imagem)}" alt="${escaparHtml(foto.legenda || 'Foto do diário de obra')}" class="h-24 w-full rounded-lg object-cover"></a>`).join('')}</div>` : '';
+}
+
+function renderizarRdos() {
+  if (!rdoLista) return;
+  const obraFiltro = rdoFiltroObra?.value;
+  const filtrados = obraFiltro ? rdos.filter((rdo) => String(rdo.obra) === obraFiltro) : rdos;
+  rdoLista.innerHTML = filtrados.length ? filtrados.map((rdo) => `
+    <article class="rounded-xl border border-slate-200 p-4" data-rdo-id="${rdo.id}">
+      <div class="flex items-start justify-between gap-3"><div><h3 class="font-bold text-slate-800">${escaparHtml(rdo.obra_nome)}</h3><p class="text-sm text-slate-500">${formatarData(rdo.data)} · ${escaparHtml(rdo.clima_display)}${rdo.temperatura ? ` · ${escaparHtml(rdo.temperatura)}°C` : ''}</p></div><span class="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900">${rdo.efetivo} pessoas</span></div>
+      ${rdo.atividades ? `<p class="mt-3 text-sm text-slate-700"><strong>Atividades:</strong> ${escaparHtml(rdo.atividades)}</p>` : ''}
+      ${rdo.ocorrencias ? `<p class="mt-2 text-sm text-slate-700"><strong>Ocorrências:</strong> ${escaparHtml(rdo.ocorrencias)}</p>` : ''}
+      ${formatarFotosRdo(rdo.fotos)}
+      ${getToken() ? `<div class="mt-3 flex gap-2"><button type="button" data-rdo-acao="editar" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold">Editar</button><button type="button" data-rdo-acao="excluir" class="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Excluir</button></div>` : ''}
+    </article>`).join('') : '<p class="text-slate-500">Nenhum diário encontrado para este filtro.</p>';
+}
+
+async function carregarRdos() {
+  if (!rdoLista || !getToken()) return;
+  rdoLista.innerHTML = '<p class="text-slate-500">Carregando diários...</p>';
+  try {
+    const [diariosData, obrasData] = await Promise.all([get('/rdo/'), get('/obras/')]);
+    rdos = diariosData.results || diariosData;
+    const obras = obrasData.results || obrasData;
+    const options = obras.map((obra) => `<option value="${obra.id}">${escaparHtml(obra.nome)}</option>`).join('');
+    if (rdoObraSelect) rdoObraSelect.innerHTML = '<option value="">Selecione uma obra</option>' + options;
+    if (rdoFiltroObra) {
+      const filtroAtual = rdoFiltroObra.value;
+      rdoFiltroObra.innerHTML = '<option value="">Todas as obras</option>' + options;
+      rdoFiltroObra.value = filtroAtual;
+    }
+    renderizarRdos();
+  } catch (error) {
+    rdoLista.innerHTML = `<p class="text-red-600">${escaparHtml(error.message || 'Não foi possível carregar os diários.')}</p>`;
+  }
+}
+
+function limparFormularioRdo() {
+  rdoForm?.reset();
+  rdoEmEdicao = null;
+  const hoje = new Date();
+  const localHoje = new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const dataInput = document.getElementById('rdo-data');
+  if (dataInput) dataInput.value = localHoje;
+  if (rdoStatus) rdoStatus.textContent = '';
+}
+
+function editarRdo(rdo) {
+  rdoEmEdicao = rdo.id;
+  rdoForm.classList.remove('hidden');
+  rdoForm.elements.obra.value = rdo.obra;
+  rdoForm.elements.data.value = rdo.data;
+  rdoForm.elements.clima.value = rdo.clima;
+  rdoForm.elements.temperatura.value = rdo.temperatura || '';
+  rdoForm.elements.efetivo.value = rdo.efetivo;
+  rdoForm.elements.atividades.value = rdo.atividades || '';
+  rdoForm.elements.ocorrencias.value = rdo.ocorrencias || '';
+  rdoForm.scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormularioFuncionario() {
+  funcionarioForm?.reset();
+  funcionarioEmEdicao = null;
+  funcionarioForm?.classList.add('hidden');
+  if (funcionarioFormTitulo) funcionarioFormTitulo.textContent = 'Novo funcionário';
+  if (funcionarioStatus) funcionarioStatus.textContent = '';
+  cancelarFuncionarioButton?.classList.add('hidden');
+}
+
+function preencherFormularioFuncionario(funcionario) {
+  funcionarioForm?.classList.remove('hidden');
+  funcionarioEmEdicao = funcionario.id;
+  document.getElementById('funcionario-nome').value = funcionario.nome;
+  document.getElementById('funcionario-cargo').value = funcionario.cargo;
+  document.getElementById('funcionario-email').value = funcionario.email || '';
+  document.getElementById('funcionario-telefone').value = funcionario.telefone || '';
+  document.getElementById('funcionario-ativo').checked = funcionario.ativo;
+  if (funcionarioFormTitulo) funcionarioFormTitulo.textContent = 'Editar funcionário';
+  cancelarFuncionarioButton?.classList.remove('hidden');
+  funcionarioForm?.scrollIntoView({ behavior: 'smooth' });
 }
 
 function limparFormularioObra() {
@@ -200,6 +453,7 @@ function limparFormularioObra() {
   obraEmEdicao = null;
   if (obraFormTitulo) obraFormTitulo.textContent = 'Nova obra';
   cancelarObraButton?.classList.add('hidden');
+  if (obraStatusMsg) obraStatusMsg.textContent = '';
 }
 
 function preencherFormularioObra(obra) {
@@ -255,6 +509,39 @@ function updateOnlineStatus() {
   }
 }
 
+function atualizarEstadoDaSessao(usuario = null) {
+  const autenticado = Boolean(usuario);
+  loginForm?.classList.toggle('hidden', autenticado);
+  registerForm?.classList.toggle('hidden', autenticado);
+  sessionPanel?.classList.toggle('hidden', !autenticado);
+  if (sessionUsername) sessionUsername.textContent = usuario?.username || '';
+  orcamentoForm?.classList.toggle('hidden', !autenticado);
+  materialForm?.classList.toggle('hidden', !autenticado);
+  obraForm?.classList.toggle('hidden', !autenticado);
+  novoFuncionarioButton?.classList.toggle('hidden', !autenticado);
+  presencaForm?.classList.toggle('hidden', !autenticado);
+  rdoNovoButton?.classList.toggle('hidden', !autenticado);
+  if (!autenticado) {
+    rdoForm?.classList.add('hidden');
+    if (rdoLista) rdoLista.innerHTML = '<p class="text-slate-500">Faça login para carregar os diários.</p>';
+  }
+  if (!autenticado) {
+    limparFormularioFuncionario();
+    if (funcionariosLista) funcionariosLista.innerHTML = '<tr><td colspan="5" class="py-4 px-4 text-slate-500">Faça login para carregar os funcionários.</td></tr>';
+    if (presencasLista) presencasLista.innerHTML = '<tr><td colspan="4" class="py-4 px-4 text-slate-500">Faça login para carregar as presenças.</td></tr>';
+    if (presencaStatus) presencaStatus.textContent = 'Faça login para registrar e consultar presenças.';
+  }
+}
+
+async function carregarDadosAutenticados() {
+  await carregarMateriais();
+  await carregarObras();
+  await carregarOrcamentos();
+  await carregarFuncionarios();
+  await carregarPresencas();
+  await carregarRdos();
+}
+
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
@@ -294,13 +581,10 @@ loginForm?.addEventListener('submit', async (event) => {
   loginStatus.textContent = 'Entrando...';
   try {
     await login(formData.get('username'), formData.get('password'));
+    const usuario = await getCurrentUser();
     loginStatus.textContent = 'Login realizado.';
-    orcamentoForm?.classList.remove('hidden');
-    materialForm?.classList.remove('hidden');
-    obraForm?.classList.remove('hidden');
-    await carregarMateriais();
-    await carregarObras();
-    await carregarOrcamentos();
+    atualizarEstadoDaSessao(usuario);
+    await carregarDadosAutenticados();
   } catch {
     loginStatus.textContent = 'Usuário ou senha inválidos.';
   }
@@ -313,20 +597,50 @@ registerForm?.addEventListener('submit', async (event) => {
   try {
     await register(
       formData.get('username'),
+      formData.get('email'),
       formData.get('password'),
       formData.get('password_confirmation'),
     );
     await login(formData.get('username'), formData.get('password'));
+    const usuario = await getCurrentUser();
     registerStatus.textContent = 'Usuário cadastrado e conectado.';
     registerForm.reset();
-    orcamentoForm?.classList.remove('hidden');
-    materialForm?.classList.remove('hidden');
-    obraForm?.classList.remove('hidden');
-    await carregarMateriais();
-    await carregarObras();
-    await carregarOrcamentos();
+    atualizarEstadoDaSessao(usuario);
+    await carregarDadosAutenticados();
   } catch (error) {
     registerStatus.textContent = error.message || 'Não foi possível conectar ao servidor.';
+  }
+});
+
+passwordResetRequestForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  passwordResetRequestStatus.textContent = 'Enviando...';
+  try {
+    await requestPasswordReset(new FormData(passwordResetRequestForm).get('email'));
+    passwordResetRequestStatus.textContent = 'Se o e-mail estiver cadastrado, as instruções foram enviadas.';
+    passwordResetRequestForm.reset();
+  } catch {
+    passwordResetRequestStatus.textContent = 'Não foi possível solicitar a recuperação agora.';
+  }
+});
+
+passwordResetConfirmForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const parametros = new URLSearchParams(window.location.search);
+  const formData = new FormData(passwordResetConfirmForm);
+  passwordResetConfirmStatus.textContent = 'Redefinindo...';
+  try {
+    await confirmPasswordReset(
+      parametros.get('uid'),
+      parametros.get('token'),
+      formData.get('password'),
+      formData.get('password_confirmation'),
+    );
+    passwordResetConfirmStatus.textContent = 'Senha redefinida. Você já pode entrar.';
+    passwordResetConfirmForm.reset();
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } catch (error) {
+    passwordResetConfirmStatus.textContent = error.message || 'Link inválido ou expirado.';
   }
 });
 
@@ -361,15 +675,84 @@ orcamentoForm?.addEventListener('submit', async (event) => {
   }
 });
 
-if (getToken()) {
-  orcamentoForm?.classList.remove('hidden');
-  materialForm?.classList.remove('hidden');
-  obraForm?.classList.remove('hidden');
-  carregarOrcamentos();
+logoutButton?.addEventListener('click', async () => {
+  logoutButton.disabled = true;
+  try {
+    await logout();
+  } finally {
+    atualizarEstadoDaSessao();
+    orcamentosLista && (orcamentosLista.innerHTML = '<li class="text-slate-500">Faça login para carregar os orçamentos.</li>');
+    loginStatus.textContent = 'Sessão encerrada.';
+    logoutButton.disabled = false;
+  }
+});
+
+async function iniciarAutenticacao() {
+  const parametros = new URLSearchParams(window.location.search);
+  if (parametros.has('uid') && parametros.has('token')) {
+    passwordResetConfirmForm?.classList.remove('hidden');
+  }
+  if (!getToken()) {
+    atualizarEstadoDaSessao();
+    return;
+  }
+  try {
+    const usuario = await getCurrentUser();
+    atualizarEstadoDaSessao(usuario);
+    await carregarDadosAutenticados();
+  } catch {
+    atualizarEstadoDaSessao();
+  }
 }
+
+iniciarAutenticacao();
 
 carregarMateriais();
 carregarObras();
+rdoForm?.classList.add('hidden');
+rdoNovoButton?.addEventListener('click', () => {
+  limparFormularioRdo();
+  rdoForm?.classList.remove('hidden');
+  rdoForm?.scrollIntoView({ behavior: 'smooth' });
+});
+cancelarRdoButton?.addEventListener('click', () => {
+  limparFormularioRdo();
+  rdoForm?.classList.add('hidden');
+});
+rdoFiltroObra?.addEventListener('change', renderizarRdos);
+rdoForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formData = new FormData(rdoForm);
+  const dados = new FormData();
+  ['obra', 'data', 'clima', 'temperatura', 'efetivo', 'atividades', 'ocorrencias'].forEach((campo) => {
+    const valor = formData.get(campo);
+    if (valor !== null && valor !== '') dados.append(campo, valor);
+  });
+  [...(formData.getAll('imagens') || [])].filter((arquivo) => arquivo instanceof File && arquivo.size > 0).slice(0, 10).forEach((arquivo) => dados.append('imagens', arquivo));
+  rdoStatus.textContent = 'Salvando diário...';
+  try {
+    if (rdoEmEdicao) await patchForm(`/rdo/${rdoEmEdicao}/`, dados);
+    else await postForm('/rdo/', dados);
+    const estavaEditando = Boolean(rdoEmEdicao);
+    limparFormularioRdo();
+    rdoStatus.textContent = estavaEditando ? 'Diário atualizado.' : 'Diário salvo.';
+    await carregarRdos();
+  } catch (error) {
+    rdoStatus.textContent = error.message || 'Não foi possível salvar o diário.';
+  }
+});
+rdoLista?.addEventListener('click', async (event) => {
+  const botao = event.target.closest('[data-rdo-acao]');
+  if (!botao) return;
+  const id = Number(botao.closest('[data-rdo-id]')?.dataset.rdoId);
+  const rdo = rdos.find((item) => item.id === id);
+  if (!rdo) return;
+  if (botao.dataset.rdoAcao === 'editar') editarRdo(rdo);
+  if (botao.dataset.rdoAcao === 'excluir' && window.confirm(`Excluir o diário de ${formatarData(rdo.data)}?`)) {
+    try { await remove(`/rdo/${id}/`); await carregarRdos(); }
+    catch (error) { window.alert(error.message || 'Não foi possível excluir o diário.'); }
+  }
+});
 adicionarItemButton?.addEventListener('click', criarLinhaDeItem);
 buscaMaterial?.addEventListener('input', () => renderizarMateriais(buscaMaterial.value));
 
@@ -401,23 +784,95 @@ obraForm?.addEventListener('submit', async (event) => {
   Object.keys(dados).forEach((campo) => {
     if (dados[campo] === '') delete dados[campo];
   });
-  obraStatus.textContent = 'Salvando...';
+  obraStatusMsg.textContent = 'Salvando...';
   try {
     if (obraEmEdicao) {
       await patch(`/obras/${obraEmEdicao}/`, dados);
-      obraStatus.textContent = 'Obra atualizada.';
+      obraStatusMsg.textContent = 'Obra atualizada.';
     } else {
       await post('/obras/', dados);
-      obraStatus.textContent = 'Obra cadastrada.';
+      obraStatusMsg.textContent = 'Obra cadastrada.';
     }
     limparFormularioObra();
     await carregarObras();
   } catch (error) {
-    obraStatus.textContent = error.message || 'Não foi possível salvar a obra.';
+    obraStatusMsg.textContent = error.message || 'Não foi possível salvar a obra.';
   }
 });
 
 cancelarObraButton?.addEventListener('click', limparFormularioObra);
+
+novoFuncionarioButton?.addEventListener('click', () => {
+  limparFormularioFuncionario();
+  funcionarioForm?.classList.remove('hidden');
+  funcionarioForm?.scrollIntoView({ behavior: 'smooth' });
+});
+
+cancelarFuncionarioButton?.addEventListener('click', limparFormularioFuncionario);
+
+presencaForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const funcionario = Number(presencaFuncionarioSelect?.value);
+  if (!funcionario) {
+    presencaStatus.textContent = 'Selecione um funcionário.';
+    return;
+  }
+  registrarPresencaButton.disabled = true;
+  presencaStatus.textContent = 'Registrando presença...';
+  const obraSelecionada = presencaObraSelect?.value;
+  try {
+    await post('/presencas/', {
+      funcionario,
+      obra: obraSelecionada ? Number(obraSelecionada) : null,
+    });
+    presencaForm.reset();
+    await carregarPresencas();
+    presencaStatus.textContent = 'Presença registrada com sucesso.';
+  } catch (error) {
+    presencaStatus.textContent = error.message || 'Não foi possível registrar a presença.';
+    registrarPresencaButton.disabled = false;
+  }
+});
+
+funcionarioForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const dados = Object.fromEntries(new FormData(funcionarioForm).entries());
+  dados.ativo = document.getElementById('funcionario-ativo').checked;
+  funcionarioStatus.textContent = 'Salvando...';
+  try {
+    let mensagem;
+    if (funcionarioEmEdicao) {
+      await patch(`/funcionarios/${funcionarioEmEdicao}/`, dados);
+      mensagem = 'Funcionário atualizado.';
+    } else {
+      await post('/funcionarios/', dados);
+      mensagem = 'Funcionário cadastrado.';
+    }
+    limparFormularioFuncionario();
+    funcionarioStatus.textContent = mensagem;
+    await carregarFuncionarios();
+  } catch (error) {
+    funcionarioStatus.textContent = error.message || 'Não foi possível salvar o funcionário.';
+  }
+});
+
+funcionariosLista?.addEventListener('click', async (event) => {
+  const botao = event.target.closest('[data-funcionario-acao]');
+  if (!botao) return;
+  const id = Number(botao.closest('[data-funcionario-id]')?.dataset.funcionarioId);
+  if (!id) return;
+  try {
+    if (botao.dataset.funcionarioAcao === 'editar') {
+      preencherFormularioFuncionario(await get(`/funcionarios/${id}/`));
+    } else if (botao.dataset.funcionarioAcao === 'excluir' && window.confirm('Excluir este funcionário?')) {
+      await remove(`/funcionarios/${id}/`);
+      if (funcionarioEmEdicao === id) limparFormularioFuncionario();
+      await carregarFuncionarios();
+    }
+  } catch (error) {
+    window.alert(error.message || 'Não foi possível concluir a ação para este funcionário.');
+  }
+});
 
 obrasLista?.addEventListener('click', async (event) => {
   const botao = event.target.closest('[data-obra-acao]');

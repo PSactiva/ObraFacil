@@ -12,11 +12,13 @@ export function clearToken() {
 
 async function request(endpoint, options = {}) {
   const headers = new Headers(options.headers || {});
-  headers.set('Content-Type', 'application/json');
+  const isFormData = options.body instanceof FormData;
+  if (!isFormData) headers.set('Content-Type', 'application/json');
   const token = getToken();
   if (token) headers.set('Authorization', `Token ${token}`);
 
   const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+  if (response.status === 401) clearToken();
   if (response.status === 204) return null;
   const data = await response.json();
   if (!response.ok) {
@@ -35,10 +37,36 @@ export async function login(username, password) {
   return data;
 }
 
-export async function register(username, password, password_confirmation) {
+export function getCurrentUser() {
+  return request('/auth/me/');
+}
+
+export async function logout() {
+  try {
+    if (getToken()) await request('/auth/logout/', { method: 'POST' });
+  } finally {
+    clearToken();
+  }
+}
+
+export function requestPasswordReset(email) {
+  return request('/auth/password-reset/', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function confirmPasswordReset(uid, token, password, password_confirmation) {
+  return request('/auth/password-reset/confirm/', {
+    method: 'POST',
+    body: JSON.stringify({ uid, token, password, password_confirmation }),
+  });
+}
+
+export async function register(username, email, password, password_confirmation) {
   return request('/auth/register/', {
     method: 'POST',
-    body: JSON.stringify({ username, password, password_confirmation }),
+    body: JSON.stringify({ username, email, password, password_confirmation }),
   });
 }
 
@@ -47,6 +75,14 @@ export async function post(endpoint, data) {
     method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+export async function postForm(endpoint, data) {
+  return request(endpoint, { method: 'POST', body: data });
+}
+
+export async function patchForm(endpoint, data) {
+  return request(endpoint, { method: 'PATCH', body: data });
 }
 
 export async function patch(endpoint, data) {

@@ -40,6 +40,13 @@ python manage.py runserver
 - Admin: http://127.0.0.1:8000/admin/
 - PWA: http://127.0.0.1:8000/
 
+## Administração do sistema
+
+Entre em `/admin/` com um superusuário criado por `python manage.py createsuperuser`.
+O painel permite administrar usuários, excluir contas, ativar ou desativar acessos,
+cadastrar e excluir funcionários e gerenciar obras, materiais e orçamentos.
+Usuários comuns não têm acesso ao painel administrativo.
+
 ## Testes
 
 ```bash
