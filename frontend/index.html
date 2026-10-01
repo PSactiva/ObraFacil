@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SINAI-EMPREITEIRA - Construindo Soluções.Realizando Sonhos.</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
 </head>
 <body class="overflow-x-hidden bg-gray-100 font-sans antialiased">
 
@@ -116,6 +116,7 @@
                 <i class="fa-solid fa-bars" aria-hidden="true"></i>
                 <span>Menu</span>
             </button>
+            <p id="offline-status" class="mb-4 text-xs text-slate-500" role="status" aria-live="polite">Conectado</p>
 
             <section id="tab-dashboard" class="tab-content space-y-6">
                 <header class="flex justify-between items-center border-b pb-4">

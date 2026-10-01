@@ -40,6 +40,14 @@ python manage.py runserver
 - Admin: http://127.0.0.1:8000/admin/
 - PWA: http://127.0.0.1:8000/
 
+O Tailwind é compilado para um arquivo CSS local. Após alterar classes do frontend, atualize-o com:
+
+```bash
+cd frontend
+npm install
+npm run build:css
+```
+
 ## Administração do sistema
 
 Entre em `/admin/` com um superusuário criado por `python manage.py createsuperuser`.

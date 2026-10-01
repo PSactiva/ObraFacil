@@ -20,10 +20,18 @@ async function request(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
   if (response.status === 401) clearToken();
   if (response.status === 204) return null;
-  const data = await response.json();
+  let data = {};
+  try {
+    data = await response.json();
+  } catch {
+    // Respostas HTML ou vazias (por exemplo, erro 500 do servidor) não devem
+    // esconder o status HTTP por trás de um erro de parse do JSON.
+  }
   if (!response.ok) {
-    const messages = Object.values(data).flat().join(' ');
-    throw new Error(messages || `API error: ${response.status}`);
+    const messages = Object.values(data).flat().filter((value) => typeof value === 'string').join(' ');
+    const error = new Error(messages || `Erro HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   return data;
 }
@@ -33,6 +41,11 @@ export async function login(username, password) {
     method: 'POST',
     body: JSON.stringify({ username, password }),
   });
+  if (!data.token) {
+    const error = new Error('A API não retornou um token de autenticação.');
+    error.status = 502;
+    throw error;
+  }
   localStorage.setItem(TOKEN_KEY, data.token);
   return data;
 }

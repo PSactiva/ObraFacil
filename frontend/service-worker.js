@@ -1,13 +1,13 @@
-const CACHE_NAME = 'obrafacil-v4';
+const CACHE_NAME = 'obrafacil-v7';
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
-  '/static/css/main.css',
-  '/static/css/accessibility.css',
+  '/static/css/tailwind.css',
   '/static/js/app.js',
   '/static/js/api.js',
-  '/static/manifest.json',
   '/static/assets/logo.jpeg',
+  '/static/vendor/fontawesome/css/all.min.css',
+  '/static/vendor/fontawesome/webfonts/fa-brands-400.woff2',
+  '/static/vendor/fontawesome/webfonts/fa-solid-900.woff2',
 ];
 
 self.addEventListener('install', (event) => {

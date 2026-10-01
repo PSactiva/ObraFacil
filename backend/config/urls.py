@@ -17,6 +17,14 @@ urlpatterns = [
     path("api/obras/", include("apps.obras.urls")),
     path("api/rdo/", include("apps.rdo.urls")),
     path("api/calculos/", include("apps.calculos.urls")),
+    path(
+        "service-worker.js",
+        TemplateView.as_view(
+            template_name="service-worker.js",
+            content_type="application/javascript",
+        ),
+        name="service-worker",
+    ),
     path("", TemplateView.as_view(template_name="index.html"), name="home"),
 ]
 

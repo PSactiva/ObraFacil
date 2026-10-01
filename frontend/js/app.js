@@ -579,14 +579,46 @@ loginForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const formData = new FormData(loginForm);
   loginStatus.textContent = 'Entrando...';
+
   try {
     await login(formData.get('username'), formData.get('password'));
+  } catch (error) {
+    if (error.status === 400 || error.status === 401) {
+      loginStatus.textContent = 'Usuário ou senha inválidos.';
+    } else if (error.status >= 500) {
+      loginStatus.textContent = `O servidor encontrou um erro (HTTP ${error.status}). Tente novamente mais tarde.`;
+    } else if (error.status) {
+      loginStatus.textContent = `A API recusou a solicitação de login (HTTP ${error.status}).`;
+    } else if (!navigator.onLine) {
+      loginStatus.textContent = 'Sem conexão com a internet. Verifique sua rede e tente novamente.';
+    } else {
+      loginStatus.textContent = 'Não foi possível conectar à API. Verifique se o servidor está funcionando.';
+    }
+    return;
+  }
+
+  try {
     const usuario = await getCurrentUser();
-    loginStatus.textContent = 'Login realizado.';
     atualizarEstadoDaSessao(usuario);
+  } catch (error) {
+    atualizarEstadoDaSessao();
+    if (error.status === 401) {
+      loginStatus.textContent = 'A API aceitou as credenciais, mas recusou o token da sessão. Entre novamente.';
+    } else if (error.status) {
+      loginStatus.textContent = `Credenciais aceitas, mas não foi possível validar a sessão (HTTP ${error.status}).`;
+    } else {
+      loginStatus.textContent = 'Credenciais aceitas, mas a conexão caiu ao validar a sessão.';
+    }
+    return;
+  }
+
+  loginStatus.textContent = 'Login realizado.';
+  try {
     await carregarDadosAutenticados();
-  } catch {
-    loginStatus.textContent = 'Usuário ou senha inválidos.';
+  } catch (error) {
+    loginStatus.textContent = error.status
+      ? `Login realizado, mas houve uma falha ao carregar os dados (HTTP ${error.status}).`
+      : 'Login realizado, mas houve uma falha ao carregar os dados.';
   }
 });
 
